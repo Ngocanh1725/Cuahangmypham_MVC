@@ -1,0 +1,156 @@
+:root {
+    --brand-dark: #be185d;   /* Hồng đậm */
+    --brand-main: #db2777;   /* Hồng chủ đạo */
+    --brand-light: #fce7f3;  /* Hồng nhạt nền */
+    --text-dark: #1f2937;
+    --text-gray: #6b7280;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text-dark);
+    background-color: #fdfdfd;
+}
+
+/* Navbar */
+.navbar-glow {
+    background-color: white;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+}
+
+.nav-link {
+    color: var(--text-dark) !important;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.nav-link:hover {
+    color: var(--brand-main) !important;
+}
+
+.btn-icon {
+    position: relative;
+    color: var(--text-dark);
+}
+
+.badge-cart {
+    position: absolute;
+    top: -5px;
+    right: -8px;
+    background-color: var(--brand-main);
+    color: white;
+    font-size: 0.7rem;
+    padding: 3px 6px;
+    border-radius: 50%;
+}
+
+/* Hero Banner */
+.hero-section {
+    background: linear-gradient(135deg, #fff1f2 0%, #fce7f3 100%);
+    padding: 80px 0;
+    border-radius: 0 0 50px 50px;
+    margin-bottom: 50px;
+}
+
+.hero-title {
+    color: var(--brand-dark);
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+/* Product Card */
+.product-card {
+    border: none;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+    background: white;
+    overflow: hidden;
+    position: relative;
+}
+
+.product-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 25px rgba(219, 39, 119, 0.15);
+}
+
+.product-img-container {
+    height: 250px;
+    overflow: hidden;
+    background-color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.product-img-container img {
+    max-height: 100%;
+    transition: transform 0.5s ease;
+}
+
+.product-card:hover .product-img-container img {
+    transform: scale(1.1);
+}
+
+.badge-new {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background-color: var(--brand-main);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.product-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.product-category {
+    color: var(--text-gray);
+    font-size: 0.85rem;
+    margin-bottom: 15px;
+}
+
+.price {
+    color: var(--brand-dark);
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.btn-add-cart {
+    background-color: var(--brand-main);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s;
+}
+
+.btn-add-cart:hover {
+    background-color: var(--brand-dark);
+    color: white;
+}
+
+/* Footer */
+footer {
+    background-color: #1f2937;
+    color: white;
+    margin-top: 80px;
+    padding: 60px 0 20px;
+}
