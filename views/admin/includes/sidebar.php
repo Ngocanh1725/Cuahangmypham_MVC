@@ -67,6 +67,12 @@
                     <i class="fas fa-box-open"></i> Quản lý sản phẩm
                 </a>
             </li>
+            <!-- ĐÃ THÊM LINK VÀO PHẦN CẤU HÌNH KHUYẾN MÃI -->
+            <li class="nav-item">
+                <a class="admin-nav-link <?php echo (isset($_GET['action']) && $_GET['action'] == 'promotions') ? 'active' : ''; ?>" href="index.php?controller=admin&action=promotions">
+                    <i class="fas fa-tags"></i> Cấu hình Khuyến mãi
+                </a>
+            </li>
             <li class="nav-item">
                 <a class="admin-nav-link <?php echo (isset($_GET['action']) && strpos($_GET['action'], 'order') !== false) ? 'active' : ''; ?>" href="index.php?controller=admin&action=orders">
                     <i class="fas fa-shopping-bag"></i> Quản lý đơn hàng 

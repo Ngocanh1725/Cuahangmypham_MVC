@@ -8,7 +8,9 @@ class AdminController {
         $this->adminModel = new AdminModel($db);
     }
 
-    // Kiểm tra quyền (Hàm dùng chung để đỡ lặp code)
+    // ---------------------------------------------------------
+    // Kiểm tra quyền (Chỉ cho phép Role 1: Admin, Role 2: Staff)
+    // ---------------------------------------------------------
     private function checkAuth() {
         if (!isset($_SESSION['user_id']) || ($_SESSION['role'] != 1 && $_SESSION['role'] != 2)) {
             header("Location: index.php?controller=user&action=login");
@@ -16,34 +18,80 @@ class AdminController {
         }
     }
 
-    // Hành động: Hiển thị Bảng điều khiển (Dashboard)
+    // ---------------------------------------------------------
+    // Hàm xử lý Upload Ảnh bảo mật 4 lớp
+    // ---------------------------------------------------------
+    private function handleImageUpload($file) {
+        if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
+            return false; // Không có file hoặc lỗi đường truyền
+        }
+
+        // Lớp 1: Giới hạn dung lượng (Ví dụ: 5MB = 5 * 1024 * 1024 bytes)
+        $maxSize = 5 * 1024 * 1024;
+        if ($file['size'] > $maxSize) {
+            return ['error' => 'Dung lượng ảnh quá lớn. Tối đa cho phép là 5MB.'];
+        }
+
+        // Lớp 2: Kiểm tra đuôi file (Extension)
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($fileExtension, $allowedExtensions)) {
+            return ['error' => 'Chỉ chấp nhận các định dạng ảnh: JPG, JPEG, PNG, GIF, WEBP.'];
+        }
+
+        // Lớp 3: Kiểm tra MIME Type thực sự (Đọc cấu trúc file để chống giả mạo đuôi)
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mimeType = $finfo->file($file['tmp_name']);
+        
+        $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!in_array($mimeType, $allowedMimeTypes)) {
+            return ['error' => 'Định dạng file không hợp lệ! Phát hiện nghi ngờ giả mạo.'];
+        }
+
+        // Lớp 4: Sinh tên file ngẫu nhiên bảo mật (tránh trùng lặp và lỗi font tiếng Việt)
+        $newFileName = md5(uniqid(rand(), true)) . '.' . $fileExtension;
+        $targetDir = "uploads/";
+        
+        if (!file_exists($targetDir)) {
+            mkdir($targetDir, 0777, true);
+        }
+        
+        $targetFile = $targetDir . $newFileName;
+
+        // Lưu file lên Server
+        if (move_uploaded_file($file['tmp_name'], $targetFile)) {
+            return ['path' => $targetFile];
+        } else {
+            return ['error' => 'Đã xảy ra lỗi đường truyền, không thể lưu file.'];
+        }
+    }
+
+    // ---------------------------------------------------------
+    // Bảng điều khiển (Dashboard)
+    // ---------------------------------------------------------
     public function index() {
-        $this->checkAuth(); // Kiểm tra bảo mật
+        $this->checkAuth();
 
         // Lấy số liệu thống kê
         $totalProducts = $this->adminModel->getTotalProducts();
         $newOrders = $this->adminModel->getNewOrdersCount();
         $totalRevenue = $this->adminModel->getTotalRevenue();
 
-        // Gọi View
         require_once 'views/admin/index.php';
     }
 
-    // Hành động MỚI: Quản lý danh sách sản phẩm
+    // ---------------------------------------------------------
+    // QUẢN LÝ SẢN PHẨM
+    // ---------------------------------------------------------
     public function products() {
-        $this->checkAuth(); // Kiểm tra bảo mật
+        $this->checkAuth();
 
-        // Gọi Model lấy danh sách sản phẩm
         $products = $this->adminModel->getAllProducts();
-
-        // Lấy thêm số lượng đơn hàng mới để hiển thị trên Sidebar (Badge đỏ)
         $newOrders = $this->adminModel->getNewOrdersCount();
 
-        // Gọi View và truyền dữ liệu sang
         require_once 'views/admin/products.php';
     }
 
-    // --- ACTION MỚI: THÊM SẢN PHẨM ---
     public function addProduct() {
         $this->checkAuth();
         $message = "";
@@ -53,30 +101,19 @@ class AdminController {
             $price = $_POST['price'] ?? 0;
             $category = $_POST['category'] ?? '';
             $status = $_POST['status'] ?? 1;
-            $imagePath = "";
+            $imagePath = "https://via.placeholder.com/300x300?text=No+Image";
 
-            // Xử lý upload ảnh (Lưu vào thư mục uploads/ ngoài cùng)
+            // Gọi hàm xử lý upload ảnh bảo mật
             if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-                $target_dir = "uploads/";
-                if (!file_exists($target_dir)) mkdir($target_dir, 0777, true);
-                $fileName = time() . "_" . basename($_FILES["image"]["name"]);
-                $target_file = $target_dir . $fileName;
-                $allowed_types = ["jpg", "jpeg", "png", "gif"];
+                $uploadResult = $this->handleImageUpload($_FILES['image']);
                 
-                if (in_array(strtolower(pathinfo($target_file, PATHINFO_EXTENSION)), $allowed_types)) {
-                    if (move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
-                        $imagePath = $target_file; // Đường dẫn chuẩn MVC
-                    } else {
-                        $message = "<div class='alert alert-danger'>Lỗi upload ảnh!</div>";
-                    }
-                } else {
-                    $message = "<div class='alert alert-danger'>Chỉ chấp nhận file ảnh!</div>";
+                if (isset($uploadResult['error'])) {
+                    $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
+                } elseif (isset($uploadResult['path'])) {
+                    $imagePath = $uploadResult['path']; // Đường dẫn file chuẩn
                 }
-            } else {
-                $imagePath = "https://via.placeholder.com/300x300?text=No+Image";
             }
 
-            // Gọi Model để lưu DB
             if (empty($message)) {
                 if ($this->adminModel->addProduct($name, $price, $category, $status, $imagePath)) {
                     header("Location: index.php?controller=admin&action=products");
@@ -88,16 +125,14 @@ class AdminController {
         }
         
         $newOrders = $this->adminModel->getNewOrdersCount();
-        require_once 'views/admin/add_product.php'; // Gọi View form thêm
+        require_once 'views/admin/add_product.php';
     }
 
-    // --- ACTION MỚI: SỬA SẢN PHẨM ---
     public function editProduct() {
         $this->checkAuth();
         $message = "";
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         
-        // Gọi Model lấy dữ liệu sản phẩm cũ hiển thị lên form
         $product = $this->adminModel->getProductById($id);
         if (!$product) die("Sản phẩm không tồn tại!");
 
@@ -106,61 +141,93 @@ class AdminController {
             $price = $_POST['price'] ?? 0;
             $category = $_POST['category'] ?? '';
             $status = $_POST['status'] ?? 1;
-            $imagePath = $_POST['current_image'] ?? ''; // Giữ ảnh cũ mặc định
+            $imagePath = $_POST['current_image'] ?? ''; 
 
-            // Nếu có up ảnh mới
             if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-                $target_dir = "uploads/";
-                if (!file_exists($target_dir)) mkdir($target_dir, 0777, true);
-                $fileName = time() . "_" . basename($_FILES["image"]["name"]);
-                $target_file = $target_dir . $fileName;
+                $uploadResult = $this->handleImageUpload($_FILES['image']);
                 
-                if (in_array(strtolower(pathinfo($target_file, PATHINFO_EXTENSION)), ["jpg", "jpeg", "png", "gif"])) {
-                    if (move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
-                        $imagePath = $target_file; // Ghi đè đường dẫn ảnh mới
+                if (isset($uploadResult['error'])) {
+                    $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
+                } elseif (isset($uploadResult['path'])) {
+                    $imagePath = $uploadResult['path']; 
+                    
+                    // Xóa ảnh cũ trên server nếu không phải là link http (ví dụ ảnh mẫu)
+                    if (!empty($_POST['current_image']) && file_exists($_POST['current_image']) && strpos($_POST['current_image'], 'http') === false) {
+                        unlink($_POST['current_image']);
                     }
                 }
             }
 
-            if ($this->adminModel->updateProduct($id, $name, $price, $category, $status, $imagePath)) {
-                header("Location: index.php?controller=admin&action=products");
-                exit();
-            } else {
-                $message = "<div class='alert alert-danger'>Lỗi cập nhật CSDL!</div>";
+            if (empty($message)) {
+                if ($this->adminModel->updateProduct($id, $name, $price, $category, $status, $imagePath)) {
+                    header("Location: index.php?controller=admin&action=products");
+                    exit();
+                } else {
+                    $message = "<div class='alert alert-danger'>Lỗi cập nhật CSDL!</div>";
+                }
             }
         }
         
         $newOrders = $this->adminModel->getNewOrdersCount();
-        require_once 'views/admin/edit_product.php'; // Gọi View form sửa
+        require_once 'views/admin/edit_product.php';
     }
 
-    // --- ACTION MỚI: XÓA SẢN PHẨM ---
     public function deleteProduct() {
         $this->checkAuth();
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         if ($id > 0) {
+            // Tùy chọn: Xóa cả file ảnh trên server trước khi xóa khỏi Database
+            $product = $this->adminModel->getProductById($id);
+            if ($product && !empty($product['image']) && file_exists($product['image']) && strpos($product['image'], 'http') === false) {
+                unlink($product['image']);
+            }
+            
             $this->adminModel->deleteProduct($id);
         }
-        // Xóa xong đẩy về lại trang danh sách
         header("Location: index.php?controller=admin&action=products");
         exit();
     }
 
-    // --- ACTION MỚI: HIỂN THỊ DANH SÁCH ĐƠN HÀNG ---
+    // ---------------------------------------------------------
+    // QUẢN LÝ KHUYẾN MÃI (PROMOTIONS)
+    // ---------------------------------------------------------
+    public function promotions() {
+        $this->checkAuth();
+
+        $products = $this->adminModel->getAllProducts();
+        $newOrders = $this->adminModel->getNewOrdersCount();
+
+        require_once 'views/admin/promotions.php';
+    }
+
+    public function savePromotion() {
+        $this->checkAuth();
+
+        if ($_SERVER["REQUEST_METHOD"] == "POST") {
+            $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+            $old_price = isset($_POST['old_price']) && $_POST['old_price'] !== '' ? intval($_POST['old_price']) : 0;
+
+            if ($id > 0) {
+                $this->adminModel->updatePromotion($id, $old_price);
+            }
+        }
+        
+        header("Location: index.php?controller=admin&action=promotions&msg=success");
+        exit();
+    }
+
+    // ---------------------------------------------------------
+    // QUẢN LÝ ĐƠN HÀNG
+    // ---------------------------------------------------------
     public function orders() {
         $this->checkAuth();
         
-        // Gọi Model lấy toàn bộ đơn hàng
         $orders = $this->adminModel->getAllOrders();
-        
-        // Lấy số lượng đơn mới để hiện thị ở Sidebar
         $newOrders = $this->adminModel->getNewOrdersCount(); 
         
-        // Trả về View
         require_once 'views/admin/orders.php';
     }
 
-    // --- ACTION MỚI: CẬP NHẬT TRẠNG THÁI ---
     public function updateOrderStatus() {
         $this->checkAuth();
         
@@ -171,27 +238,22 @@ class AdminController {
             $this->adminModel->updateOrderStatus($id, $status);
         }
         
-        // Cập nhật xong tự động quay lại trang danh sách đơn hàng
         header("Location: index.php?controller=admin&action=orders");
         exit();
     }
 
-    // --- ACTION MỚI: XEM CHI TIẾT ĐƠN HÀNG ---
-    public function orderDetail() {
-        // ... (code cũ)
-    }
-
-    // --- CÁC ACTION MỚI: QUẢN LÝ TÀI KHOẢN ---
-
-    // 1. Hiển thị danh sách Tài khoản
+    // ---------------------------------------------------------
+    // QUẢN LÝ TÀI KHOẢN (USER)
+    // ---------------------------------------------------------
     public function users() {
         $this->checkAuth();
+        
         $users = $this->adminModel->getAllUsers();
         $newOrders = $this->adminModel->getNewOrdersCount(); 
+        
         require_once 'views/admin/users.php';
     }
 
-    // 2. Thêm Tài khoản mới (Chỉ Admin)
     public function addUser() {
         $this->checkAuth();
         if ($_SESSION['role'] != 1) die("Bạn không có quyền thực hiện chức năng này!");
@@ -206,7 +268,7 @@ class AdminController {
             if ($this->adminModel->checkEmailExists($email)) {
                 $message = "<div class='alert alert-danger'>Email này đã được sử dụng!</div>";
             } else {
-                $hashed_password = password_hash($password, PASSWORD_DEFAULT); // Mã hóa mật khẩu
+                $hashed_password = password_hash($password, PASSWORD_DEFAULT); 
                 if ($this->adminModel->addUser($fullname, $email, $hashed_password, $role)) {
                     header("Location: index.php?controller=admin&action=users");
                     exit();
@@ -219,7 +281,6 @@ class AdminController {
         require_once 'views/admin/add_user.php';
     }
 
-    // 3. Sửa Tài khoản (Chỉ Admin)
     public function editUser() {
         $this->checkAuth();
         if ($_SESSION['role'] != 1) die("Bạn không có quyền thực hiện chức năng này!");
@@ -252,14 +313,13 @@ class AdminController {
         require_once 'views/admin/edit_user.php';
     }
 
-    // 4. Xóa Tài khoản (Chỉ Admin)
     public function deleteUser() {
         $this->checkAuth();
         if ($_SESSION['role'] != 1) die("Bạn không có quyền thực hiện chức năng này!");
 
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         
-        // Ngăn Admin tự xóa chính mình
+        // Ngăn Admin tự xóa tài khoản của chính mình để tránh lỗi
         if ($id == $_SESSION['user_id']) {
             die("Không thể tự xóa tài khoản đang đăng nhập!");
         }

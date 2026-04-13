@@ -6,7 +6,6 @@ class AdminModel {
         $this->conn = $db;
     }
 
-    // --- CÁC HÀM DÀNH CHO DASHBOARD ---
     public function getTotalProducts() {
         $sql = "SELECT COUNT(*) as total FROM products";
         $result = $this->conn->query($sql);
@@ -26,11 +25,9 @@ class AdminModel {
         return $row['total'] ? $row['total'] : 0;
     }
 
-    // --- HÀM MỚI: LẤY DANH SÁCH SẢN PHẨM ---
     public function getAllProducts() {
         $sql = "SELECT * FROM products ORDER BY id DESC";
         $result = $this->conn->query($sql);
-        
         $products = [];
         if ($result && $result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
@@ -40,41 +37,48 @@ class AdminModel {
         return $products;
     }
 
-    // --- HÀM MỚI: THÊM SẢN PHẨM ---
     public function addProduct($name, $price, $category, $status, $image) {
-        $name = $this->conn->real_escape_string($name);
-        $category = $this->conn->real_escape_string($category);
-        $sql = "INSERT INTO products (name, price, category, status, image) VALUES ('$name', '$price', '$category', '$status', '$image')";
-        return $this->conn->query($sql);
+        $stmt = $this->conn->prepare("INSERT INTO products (name, price, category, status, image) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("sdsis", $name, $price, $category, $status, $image);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
     }
 
-    // --- HÀM MỚI: LẤY 1 SẢN PHẨM THEO ID (Dùng để hiển thị lên form sửa) ---
     public function getProductById($id) {
-        $id = intval($id);
-        $sql = "SELECT * FROM products WHERE id = $id";
-        $result = $this->conn->query($sql);
-        return $result ? $result->fetch_assoc() : null;
+        $stmt = $this->conn->prepare("SELECT * FROM products WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $product = $result->fetch_assoc();
+        $stmt->close();
+        return $product;
     }
 
-    // --- HÀM MỚI: CẬP NHẬT SẢN PHẨM ---
     public function updateProduct($id, $name, $price, $category, $status, $image) {
-        $id = intval($id);
-        $name = $this->conn->real_escape_string($name);
-        $category = $this->conn->real_escape_string($category);
-        $sql = "UPDATE products SET name='$name', price='$price', category='$category', status='$status', image='$image' WHERE id=$id";
-        return $this->conn->query($sql);
+        $stmt = $this->conn->prepare("UPDATE products SET name=?, price=?, category=?, status=?, image=? WHERE id=?");
+        $stmt->bind_param("sdsisi", $name, $price, $category, $status, $image, $id);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
     }
 
-    // --- HÀM MỚI: XÓA SẢN PHẨM ---
     public function deleteProduct($id) {
-        $id = intval($id);
-        $sql = "DELETE FROM products WHERE id=$id";
-        return $this->conn->query($sql);
+        $stmt = $this->conn->prepare("DELETE FROM products WHERE id=?");
+        $stmt->bind_param("i", $id);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
     }
 
-    // --- CÁC HÀM MỚI: QUẢN LÝ ĐƠN HÀNG ---
+    public function updatePromotion($id, $old_price) {
+        $stmt = $this->conn->prepare("UPDATE products SET old_price = ? WHERE id = ?");
+        $stmt->bind_param("di", $old_price, $id);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
     
-    // Lấy toàn bộ danh sách đơn hàng
     public function getAllOrders() {
         $sql = "SELECT * FROM orders ORDER BY id DESC";
         $result = $this->conn->query($sql);
@@ -87,30 +91,24 @@ class AdminModel {
         return $orders;
     }
 
-    // Cập nhật trạng thái đơn hàng
     public function updateOrderStatus($id, $status) {
-        $id = intval($id);
-        $status = $this->conn->real_escape_string($status);
-        $sql = "UPDATE orders SET status='$status' WHERE id=$id";
-        return $this->conn->query($sql);
+        $stmt = $this->conn->prepare("UPDATE orders SET status=? WHERE id=?");
+        $stmt->bind_param("si", $status, $id);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
     }
 
-    // --- HÀM MỚI: LẤY THÔNG TIN 1 ĐƠN HÀNG ---
     public function getOrderById($id) {
-        $id = intval($id);
-        $sql = "SELECT * FROM orders WHERE id = $id";
-        $result = $this->conn->query($sql);
-        return $result ? $result->fetch_assoc() : null;
+        $stmt = $this->conn->prepare("SELECT * FROM orders WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $order = $result->fetch_assoc();
+        $stmt->close();
+        return $order;
     }
 
-    // --- HÀM MỚI: LẤY CHI TIẾT SẢN PHẨM TRONG ĐƠN ---
-    public function getOrderDetails($order_id) {
-        // ... (code cũ)
-    }
-
-    // --- CÁC HÀM MỚI: QUẢN LÝ TÀI KHOẢN ---
-
-    // Lấy toàn bộ danh sách người dùng
     public function getAllUsers() {
         $sql = "SELECT * FROM users ORDER BY role ASC, id DESC";
         $result = $this->conn->query($sql);
@@ -123,49 +121,53 @@ class AdminModel {
         return $users;
     }
 
-    // Lấy 1 người dùng theo ID
     public function getUserById($id) {
-        $id = intval($id);
-        $sql = "SELECT * FROM users WHERE id = $id";
-        $result = $this->conn->query($sql);
-        return $result ? $result->fetch_assoc() : null;
+        $stmt = $this->conn->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
+        $stmt->close();
+        return $user;
     }
 
-    // Kiểm tra Email đã tồn tại chưa (tránh trùng lặp khi thêm)
     public function checkEmailExists($email, $exclude_id = 0) {
-        $email = $this->conn->real_escape_string($email);
-        $sql = "SELECT id FROM users WHERE email = '$email' AND id != $exclude_id";
-        $result = $this->conn->query($sql);
-        return ($result && $result->num_rows > 0);
+        $stmt = $this->conn->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
+        $stmt->bind_param("si", $email, $exclude_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $exists = ($result && $result->num_rows > 0);
+        $stmt->close();
+        return $exists;
     }
 
-    // Thêm người dùng mới
     public function addUser($fullname, $email, $password, $role) {
-        $fullname = $this->conn->real_escape_string($fullname);
-        $email = $this->conn->real_escape_string($email);
-        $sql = "INSERT INTO users (full_name, email, password, role) VALUES ('$fullname', '$email', '$password', '$role')";
-        return $this->conn->query($sql);
+        $stmt = $this->conn->prepare("INSERT INTO users (full_name, email, password, role) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("sssi", $fullname, $email, $password, $role);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
     }
 
-    // Cập nhật người dùng (Có thể đổi hoặc giữ nguyên mật khẩu)
     public function updateUser($id, $fullname, $email, $role, $password = null) {
-        $id = intval($id);
-        $fullname = $this->conn->real_escape_string($fullname);
-        $email = $this->conn->real_escape_string($email);
-        
         if ($password != null) {
-            $sql = "UPDATE users SET full_name='$fullname', email='$email', role='$role', password='$password' WHERE id=$id";
+            $stmt = $this->conn->prepare("UPDATE users SET full_name=?, email=?, role=?, password=? WHERE id=?");
+            $stmt->bind_param("ssisi", $fullname, $email, $role, $password, $id);
         } else {
-            $sql = "UPDATE users SET full_name='$fullname', email='$email', role='$role' WHERE id=$id";
+            $stmt = $this->conn->prepare("UPDATE users SET full_name=?, email=?, role=? WHERE id=?");
+            $stmt->bind_param("ssii", $fullname, $email, $role, $id);
         }
-        return $this->conn->query($sql);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
     }
 
-    // Xóa người dùng
     public function deleteUser($id) {
-        $id = intval($id);
-        $sql = "DELETE FROM users WHERE id=$id";
-        return $this->conn->query($sql);
+        $stmt = $this->conn->prepare("DELETE FROM users WHERE id=?");
+        $stmt->bind_param("i", $id);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
     }
 }
 ?>

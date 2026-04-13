@@ -19,18 +19,23 @@ class ProductModel {
         return $products;
     }
 
-    // Nâng cấp: Lấy sản phẩm theo BỘ LỌC và TỪ KHÓA TÌM KIẾM
+    // Nâng cấp: Lấy sản phẩm theo BỘ LỌC và TỪ KHÓA TÌM KIẾM an toàn
     public function getProductsByFilter($filter = 'all', $keyword = '') {
         $sql = "SELECT * FROM products WHERE 1=1";
+        $params = [];
+        $types = "";
 
-        // Ưu tiên xử lý từ khóa tìm kiếm trước
+        // Ưu tiên xử lý từ khóa tìm kiếm trước bằng Prepared Statement
         if (!empty($keyword)) {
-            $keyword = $this->conn->real_escape_string($keyword);
-            $sql .= " AND (name LIKE '%$keyword%' OR category LIKE '%$keyword%')";
+            $sql .= " AND (name LIKE ? OR category LIKE ?)";
+            $types .= "ss";
+            $searchParam = "%{$keyword}%";
+            $params[] = &$searchParam;
+            $params[] = &$searchParam;
         } else {
-            // Xử lý các Tab lọc
+            // Xử lý các Tab lọc (An toàn vì $filter được gán cứng từ code, không nhập trực tiếp)
             if ($filter == 'promotion') {
-                $sql .= " AND old_price > price ORDER BY id DESC"; // Chỉ lấy hàng có giảm giá
+                $sql .= " AND old_price > price ORDER BY id DESC";
             } elseif ($filter == 'new') {
                 $sql .= " ORDER BY id DESC LIMIT 20"; 
             } elseif ($filter == 'skincare') {
@@ -46,13 +51,24 @@ class ProductModel {
             }
         }
 
-        $result = $this->conn->query($sql);
+        $stmt = $this->conn->prepare($sql);
+        
+        // Nếu có tham số keyword thì bind vào
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
         $products = [];
         if ($result && $result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
                 $products[] = $row;
             }
         }
+        
+        $stmt->close();
         return $products;
     }
 }

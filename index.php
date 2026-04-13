@@ -13,42 +13,41 @@ $db = $database->getConnection();
 $controllerName = isset($_GET['controller']) ? $_GET['controller'] : 'product';
 $actionName = isset($_GET['action']) ? $_GET['action'] : 'index';
 
-// 4. Định tuyến (Routing) - Điều hướng đến đúng Controller
-switch ($controllerName) {
-    case 'product':
-        require_once 'controllers/ProductController.php';
-        $controller = new ProductController($db);
-        break;
-        
-    case 'admin':
-        require_once 'controllers/AdminController.php';
-        $controller = new AdminController($db);
-        break;
-        
-    case 'cart':
-        require_once 'controllers/CartController.php';
-        $controller = new CartController($db);
-        break;
-        
-    case 'user':
-        require_once 'controllers/UserController.php'; 
-        $controller = new UserController($db); 
-        break;
+// ==============================================================
+// 4. DYNAMIC ROUTING (ĐỊNH TUYẾN ĐỘNG TỰ ĐỘNG)
+// ==============================================================
 
-    // CONTROLLER MỚI THÊM DÀNH CHO CÁC TRANG TĨNH (Hệ thống cửa hàng, tạp chí, v.v...)
-    case 'page':
-        require_once 'controllers/PageController.php';
-        $controller = new PageController($db);
-        break;
+// Bước 4.1: Chuẩn hóa tên Controller 
+// Ví dụ: 'product' -> 'ProductController', 'admin' -> 'AdminController'
+$className = ucfirst(strtolower($controllerName)) . 'Controller';
 
-    default:
-        die("<h2 style='text-align:center; margin-top:50px;'>Lỗi 404: Không tìm thấy Controller (Trang bạn yêu cầu không tồn tại)!</h2>");
-}
+// Bước 4.2: Xác định đường dẫn đến file Controller
+$controllerFile = 'controllers/' . $className . '.php';
 
-// 5. Chạy hàm (action) tương ứng trong Controller đã được gọi
-if (method_exists($controller, $actionName)) {
-    $controller->$actionName();
+// Bước 4.3: Kiểm tra xem file Controller có tồn tại không
+if (file_exists($controllerFile)) {
+    // Nếu có, nạp file đó vào
+    require_once $controllerFile;
+    
+    // Kiểm tra tiếp xem Class có được định nghĩa trong file không
+    if (class_exists($className)) {
+        // Khởi tạo đối tượng Controller linh hoạt (Truyền $db vào hàm __construct)
+        $controller = new $className($db);
+        
+        // Bước 4.4: Kiểm tra xem hàm (action) có tồn tại trong Controller không
+        if (method_exists($controller, $actionName)) {
+            // Chạy hàm tương ứng
+            $controller->$actionName();
+        } else {
+            // Lỗi nếu Action không tồn tại
+            die("<h2 style='text-align:center; margin-top:50px;'>Lỗi 404: Không tìm thấy Action '{$actionName}' trong '{$className}'!</h2>");
+        }
+    } else {
+        // Lỗi nếu File có nhưng quên đặt tên Class hoặc viết sai chính tả
+        die("<h2 style='text-align:center; margin-top:50px;'>Lỗi 500: Lớp '{$className}' không được định nghĩa!</h2>");
+    }
 } else {
-    die("<h2 style='text-align:center; margin-top:50px;'>Lỗi 404: Không tìm thấy Action (Hành động không hợp lệ)!</h2>");
+    // Lỗi nếu người dùng nhập sai tên controller trên URL (File không tồn tại)
+    die("<h2 style='text-align:center; margin-top:50px;'>Lỗi 404: Không tìm thấy Controller '{$controllerName}' (Trang bạn yêu cầu không tồn tại)!</h2>");
 }
 ?>

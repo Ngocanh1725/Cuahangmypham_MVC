@@ -6,47 +6,49 @@ class OrderModel {
         $this->conn = $db;
     }
 
-    // Tạo đơn hàng mới (Lưu thông tin chung của khách)
+    // Tạo đơn hàng mới (Dùng Prepared Statement bảo vệ thông tin khách nhập)
     public function createOrder($user_id, $name, $phone, $address, $total_price, $payment_method = 'COD') {
-        $user_id_val = $user_id ? intval($user_id) : 'NULL';
-        $name = $this->conn->real_escape_string($name);
-        $phone = $this->conn->real_escape_string($phone);
-        $address = $this->conn->real_escape_string($address);
-        $payment_method = $this->conn->real_escape_string($payment_method);
+        $user_id_val = $user_id ? intval($user_id) : null;
         
-        $sql = "INSERT INTO orders (user_id, customer_name, customer_phone, customer_address, total_price, payment_method) 
-                VALUES ($user_id_val, '$name', '$phone', '$address', $total_price, '$payment_method')";
+        $stmt = $this->conn->prepare("INSERT INTO orders (user_id, customer_name, customer_phone, customer_address, total_price, payment_method) VALUES (?, ?, ?, ?, ?, ?)");
+        // i: integer, s: string, d: double
+        $stmt->bind_param("isssds", $user_id_val, $name, $phone, $address, $total_price, $payment_method);
         
-        if ($this->conn->query($sql)) {
-            // Trả về ID của đơn hàng vừa tạo xong
-            return $this->conn->insert_id;
+        if ($stmt->execute()) {
+            $insert_id = $stmt->insert_id;
+            $stmt->close();
+            return $insert_id;
         }
+        $stmt->close();
         return false;
     }
 
-    // Lưu chi tiết từng sản phẩm khách mua vào đơn hàng đó
+    // Lưu chi tiết từng sản phẩm
     public function createOrderDetail($order_id, $product_id, $price, $quantity) {
-        $sql = "INSERT INTO order_details (order_id, product_id, price, quantity) 
-                VALUES ($order_id, $product_id, $price, $quantity)";
-        return $this->conn->query($sql);
+        $stmt = $this->conn->prepare("INSERT INTO order_details (order_id, product_id, price, quantity) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("iidi", $order_id, $product_id, $price, $quantity);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
     }
 
-    // Lấy thông tin chung của 1 đơn hàng để in hóa đơn
+    // Lấy thông tin chung của 1 đơn hàng
     public function getOrderById($id) {
-        $id = intval($id);
-        $sql = "SELECT * FROM orders WHERE id = $id";
-        $result = $this->conn->query($sql);
-        return $result ? $result->fetch_assoc() : null;
+        $stmt = $this->conn->prepare("SELECT * FROM orders WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $order = $result->fetch_assoc();
+        $stmt->close();
+        return $order;
     }
 
     // Lấy chi tiết các món hàng trong 1 đơn
     public function getOrderDetails($order_id) {
-        $order_id = intval($order_id);
-        $sql = "SELECT od.*, p.name, p.image 
-                FROM order_details od 
-                JOIN products p ON od.product_id = p.id 
-                WHERE od.order_id = $order_id";
-        $result = $this->conn->query($sql);
+        $stmt = $this->conn->prepare("SELECT od.*, p.name, p.image FROM order_details od JOIN products p ON od.product_id = p.id WHERE od.order_id = ?");
+        $stmt->bind_param("i", $order_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
         
         $details = [];
         if ($result && $result->num_rows > 0) {
@@ -54,14 +56,16 @@ class OrderModel {
                 $details[] = $row;
             }
         }
+        $stmt->close();
         return $details;
     }
 
-    // --- HÀM MỚI: LẤY DANH SÁCH ĐƠN HÀNG CỦA MỘT KHÁCH HÀNG ---
+    // Lấy danh sách đơn hàng của một khách hàng
     public function getOrdersByUserId($user_id) {
-        $user_id = intval($user_id);
-        $sql = "SELECT * FROM orders WHERE user_id = $user_id ORDER BY id DESC";
-        $result = $this->conn->query($sql);
+        $stmt = $this->conn->prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
         
         $orders = [];
         if ($result && $result->num_rows > 0) {
@@ -69,6 +73,7 @@ class OrderModel {
                 $orders[] = $row;
             }
         }
+        $stmt->close();
         return $orders;
     }
 }
