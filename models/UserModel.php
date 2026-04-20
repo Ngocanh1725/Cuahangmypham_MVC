@@ -8,9 +8,7 @@ class UserModel {
 
     // Hàm kiểm tra đăng nhập trong Database sử dụng Prepared Statement
     public function login($email, $password) {
-        // Sử dụng prepare statement để ngăn SQL Injection
         $stmt = $this->conn->prepare("SELECT * FROM users WHERE email = ?");
-        // "s" biểu thị tham số là string
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -18,7 +16,6 @@ class UserModel {
         if ($result && $result->num_rows > 0) {
             $user = $result->fetch_assoc();
             
-            // Kiểm tra mật khẩu mã hóa (Bcrypt)
             if (password_verify($password, $user['password'])) {
                 return $user; 
             }
@@ -26,6 +23,31 @@ class UserModel {
         
         $stmt->close();
         return false; 
+    }
+
+    // [MỚI] Lấy thông tin user theo ID
+    public function getUserById($id) {
+        $stmt = $this->conn->prepare("SELECT id, full_name, email, role FROM users WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
+        $stmt->close();
+        return $user;
+    }
+
+    // [MỚI] Cập nhật thông tin cá nhân
+    public function updateProfile($id, $fullname, $password = null) {
+        if ($password != null) {
+            $stmt = $this->conn->prepare("UPDATE users SET full_name = ?, password = ? WHERE id = ?");
+            $stmt->bind_param("ssi", $fullname, $password, $id);
+        } else {
+            $stmt = $this->conn->prepare("UPDATE users SET full_name = ? WHERE id = ?");
+            $stmt->bind_param("si", $fullname, $id);
+        }
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
     }
 }
 ?>

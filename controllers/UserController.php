@@ -15,7 +15,6 @@ class UserController {
 
     // --- ACTION ĐĂNG NHẬP ---
     public function login() {
-        // Nếu đã đăng nhập rồi thì phân quyền điều hướng luôn, không hiện form nữa
         if (isset($_SESSION['user_id'])) {
             if ($_SESSION['role'] == 1 || $_SESSION['role'] == 2) {
                 header("Location: index.php?controller=admin&action=index");
@@ -27,26 +26,20 @@ class UserController {
 
         $message = "";
         
-        // Xử lý khi người dùng bấm nút Đăng nhập (Submit Form)
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $email = $_POST['email'] ?? '';
             $password = $_POST['password'] ?? '';
 
-            // Gọi Model để kiểm tra
             $user = $this->userModel->login($email, $password);
 
             if ($user) {
-                // Đăng nhập thành công -> Lưu thông tin vào Session
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['full_name'] = $user['full_name'];
                 $_SESSION['role'] = $user['role'];
 
-                // PHÂN QUYỀN ĐIỀU HƯỚNG
                 if ($user['role'] == 1 || $user['role'] == 2) {
-                    // Role 1 (Quản lý) và Role 2 (Nhân viên) -> Vào trang Admin
                     header("Location: index.php?controller=admin&action=index");
                 } else {
-                    // Role 0 (Khách hàng) -> Quay lại trang chủ mua sắm
                     header("Location: index.php");
                 }
                 exit();
@@ -55,7 +48,6 @@ class UserController {
             }
         }
 
-        // Nếu là GET request hoặc đăng nhập sai, hiển thị lại Form
         require_once 'views/users/login.php';
     }
 
@@ -81,6 +73,45 @@ class UserController {
         $orders = $orderModel->getOrdersByUserId($user_id);
 
         require_once 'views/users/orders.php';
+    }
+
+    // --- [MỚI] ACTION HỒ SƠ CÁ NHÂN ---
+    public function profile() {
+        // 1. Kiểm tra đăng nhập
+        if (!isset($_SESSION['user_id'])) {
+            header("Location: index.php?controller=user&action=login");
+            exit();
+        }
+
+        $user_id = $_SESSION['user_id'];
+        $message = "";
+
+        // 2. Xử lý khi người dùng ấn nút "Cập nhật"
+        if ($_SERVER["REQUEST_METHOD"] == "POST") {
+            $fullname = trim($_POST['fullname'] ?? '');
+            $new_password = $_POST['new_password'] ?? '';
+
+            if (empty($fullname)) {
+                $message = "<div class='alert alert-warning'>Tên không được để trống!</div>";
+            } else {
+                // Nếu có nhập mật khẩu mới thì mã hóa, không thì truyền null
+                $hashed_password = !empty($new_password) ? password_hash($new_password, PASSWORD_DEFAULT) : null;
+
+                if ($this->userModel->updateProfile($user_id, $fullname, $hashed_password)) {
+                    // Cập nhật lại session tên người dùng
+                    $_SESSION['full_name'] = $fullname;
+                    $message = "<div class='alert alert-success'><i class='fas fa-check-circle me-2'></i>Cập nhật thông tin thành công!</div>";
+                } else {
+                    $message = "<div class='alert alert-danger'>Có lỗi xảy ra, vui lòng thử lại!</div>";
+                }
+            }
+        }
+
+        // 3. Lấy dữ liệu user hiện tại để hiển thị lên form
+        $user = $this->userModel->getUserById($user_id);
+        
+        // 4. Gọi view hiển thị
+        require_once 'views/users/profile.php';
     }
 }
 ?>

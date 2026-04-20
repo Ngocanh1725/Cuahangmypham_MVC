@@ -26,13 +26,14 @@
         box-shadow: 0 4px 10px rgba(0,0,0,0.12);
     }
     
-    /* Bảng màu chuẩn Pastel */
-    .bg-pill-1 { background-color: #fce4ec; } 
-    .bg-pill-2 { background-color: #ffe0b2; } 
-    .bg-pill-3 { background-color: #ffcdd2; } 
-    .bg-pill-4 { background-color: #dcedc8; } 
-    .bg-pill-5 { background-color: #b3e5fc; } 
-    .bg-pill-6 { background-color: #b2dfdb; } 
+    /* Bảng màu chuẩn Pastel theo yêu cầu ảnh mẫu */
+    .bg-pill-brand { background-color: #fce4ec; } /* Hồng pastel cho nút Thương hiệu */
+    .bg-pill-1 { background-color: #ffe0b2; } /* Cam nhạt */
+    .bg-pill-2 { background-color: #ffcdd2; } /* Đỏ/Hồng đậm hơn */
+    .bg-pill-3 { background-color: #dcedc8; } /* Xanh lá nhạt */
+    .bg-pill-4 { background-color: #b3e5fc; } /* Xanh dương nhạt */
+    .bg-pill-5 { background-color: #b2dfdb; } /* Xanh ngọc */
+    .bg-pill-6 { background-color: #ffab91; } /* Cam đậm */
 </style>
 
 <!-- Tầng 1: Top Promo Bar -->
@@ -69,7 +70,7 @@
                 <i class="fas fa-book-open"></i> Tạp chí làm đẹp
             </a>
 
-            <!-- DẤU 3 CHẤM ĐÃ ĐƯỢC LÀM LẠI ICON GIỐNG BEAUTY BOX -->
+            <!-- DẤU 3 CHẤM MENU -->
             <div class="dropdown">
                 <a href="#" class="text-dark fs-5 text-decoration-none dropdown-toggle-no-caret" data-bs-toggle="dropdown" aria-expanded="false" style="padding: 0 5px;">
                     <i class="fas fa-ellipsis-h"></i>
@@ -80,7 +81,6 @@
                     <li><a class="dropdown-item py-2 px-3 d-flex align-items-center" href="index.php?controller=page&action=events"><i class="fas fa-store-alt text-dark me-3 opacity-75" style="font-size: 1.1rem; width: 20px; text-align: center;"></i> <span style="font-size: 15px; font-weight: 500;">Sự kiện tại store</span></a></li>
                 </ul>
             </div>
-            <!-- Bỏ class mũi tên mặc định của Bootstrap Dropdown -->
             <style>.dropdown-toggle-no-caret::after { display: none !important; }</style>
 
             <div class="vr"></div> <!-- Dấu gạch dọc phân cách -->
@@ -130,21 +130,23 @@
 
 <!-- Tầng 3: Colorful Navigation (Pill Nav) -->
 <?php 
-    $currentFilter = isset($_GET['filter']) ? $_GET['filter'] : 'all'; 
-    if(isset($_GET['controller']) && $_GET['controller'] != 'product' && $_GET['controller'] != '') {
-        $currentFilter = ''; 
-    }
+    $currentFilter = isset($_GET['filter']) ? $_GET['filter'] : ''; 
+    $currentController = isset($_GET['controller']) ? $_GET['controller'] : 'product';
 ?>
 <nav class="bg-white py-3 shadow-sm mb-4">
     <div class="container">
+        <!-- Áp dụng màu sắc đúng theo ảnh mẫu của bạn -->
         <div class="d-flex justify-content-center gap-3 flex-wrap pill-nav">
-            <a href="index.php?controller=product&action=index&filter=all" class="nav-link bg-pill-1 <?php echo ($currentFilter == 'all' || $currentFilter == '') ? 'active-pill' : ''; ?>">Tất cả</a>
-            <a href="index.php?controller=product&action=index&filter=promotion" class="nav-link bg-pill-2 <?php echo ($currentFilter == 'promotion') ? 'active-pill' : ''; ?>">Khuyến mãi hot</a>
-            <a href="index.php?controller=product&action=index&filter=makeup" class="nav-link bg-pill-3 <?php echo ($currentFilter == 'makeup') ? 'active-pill' : ''; ?>">Trang điểm</a>
-            <a href="index.php?controller=product&action=index&filter=skincare" class="nav-link bg-pill-4 <?php echo ($currentFilter == 'skincare') ? 'active-pill' : ''; ?>">Chăm Sóc Da Mặt</a>
-            <a href="index.php?controller=product&action=index&filter=hairbody" class="nav-link bg-pill-5 <?php echo ($currentFilter == 'hairbody') ? 'active-pill' : ''; ?>">Chăm sóc cơ thể</a>
-            <a href="index.php?controller=product&action=index&filter=new" class="nav-link bg-pill-6 <?php echo ($currentFilter == 'new') ? 'active-pill' : ''; ?>">Sản Phẩm Mới</a>
-            <a href="index.php?controller=product&action=index&filter=perfume" class="nav-link bg-pill-7 <?php echo ($currentFilter == 'perfume') ? 'active-pill' : ''; ?>">Nước hoa</a>
+            
+            <!-- Nút Thương Hiệu mới được thêm vào -->
+            <a href="index.php?controller=brand&action=index" class="nav-link bg-pill-brand <?php echo ($currentController == 'brand') ? 'active-pill' : ''; ?>">Thương hiệu</a>
+            
+            <a href="index.php?controller=product&action=index&filter=promotion" class="nav-link bg-pill-1 <?php echo ($currentFilter == 'promotion') ? 'active-pill' : ''; ?>">Khuyến mãi hot</a>
+            <a href="index.php?controller=product&action=index&filter=makeup" class="nav-link bg-pill-2 <?php echo ($currentFilter == 'makeup') ? 'active-pill' : ''; ?>">Trang điểm</a>
+            <a href="index.php?controller=product&action=index&filter=skincare" class="nav-link bg-pill-3 <?php echo ($currentFilter == 'skincare') ? 'active-pill' : ''; ?>">Chăm Sóc Da Mặt</a>
+            <a href="index.php?controller=product&action=index&filter=hairbody" class="nav-link bg-pill-4 <?php echo ($currentFilter == 'hairbody') ? 'active-pill' : ''; ?>">Chăm sóc cơ thể</a>
+            <a href="index.php?controller=product&action=index&filter=new" class="nav-link bg-pill-5 <?php echo ($currentFilter == 'new') ? 'active-pill' : ''; ?>">Sản Phẩm Mới</a>
+            <a href="index.php?controller=product&action=index&filter=all" class="nav-link bg-pill-6 <?php echo ($currentFilter == 'all' || ($currentFilter == '' && $currentController == 'product')) ? 'active-pill' : ''; ?>">Tất cả</a>
         </div>
     </div>
 </nav>

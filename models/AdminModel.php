@@ -25,6 +25,9 @@ class AdminModel {
         return $row['total'] ? $row['total'] : 0;
     }
 
+    // ---------------------------------------------------------
+    // SẢN PHẨM (PRODUCTS)
+    // ---------------------------------------------------------
     public function getAllProducts() {
         $sql = "SELECT * FROM products ORDER BY id DESC";
         $result = $this->conn->query($sql);
@@ -78,7 +81,59 @@ class AdminModel {
         $stmt->close();
         return $result;
     }
+
+    // ---------------------------------------------------------
+    // THƯƠNG HIỆU (BRANDS)
+    // ---------------------------------------------------------
+    public function getAllBrands() {
+        $sql = "SELECT * FROM brands ORDER BY id DESC";
+        $result = $this->conn->query($sql);
+        $brands = [];
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $brands[] = $row;
+            }
+        }
+        return $brands;
+    }
+
+    public function addBrand($name, $logo, $banner, $description) {
+        $stmt = $this->conn->prepare("INSERT INTO brands (name, logo, banner, description) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("ssss", $name, $logo, $banner, $description);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    public function getBrandById($id) {
+        $stmt = $this->conn->prepare("SELECT * FROM brands WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $brand = $result->fetch_assoc();
+        $stmt->close();
+        return $brand;
+    }
+
+    public function updateBrand($id, $name, $logo, $banner, $description) {
+        $stmt = $this->conn->prepare("UPDATE brands SET name=?, logo=?, banner=?, description=? WHERE id=?");
+        $stmt->bind_param("ssssi", $name, $logo, $banner, $description, $id);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    public function deleteBrand($id) {
+        $stmt = $this->conn->prepare("DELETE FROM brands WHERE id=?");
+        $stmt->bind_param("i", $id);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
     
+    // ---------------------------------------------------------
+    // ĐƠN HÀNG & TÀI KHOẢN (ORDERS & USERS)
+    // ---------------------------------------------------------
     public function getAllOrders() {
         $sql = "SELECT * FROM orders ORDER BY id DESC";
         $result = $this->conn->query($sql);

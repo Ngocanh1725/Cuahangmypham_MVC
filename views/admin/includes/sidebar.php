@@ -67,7 +67,13 @@
                     <i class="fas fa-box-open"></i> Quản lý sản phẩm
                 </a>
             </li>
-            <!-- ĐÃ THÊM LINK VÀO PHẦN CẤU HÌNH KHUYẾN MÃI -->
+            <!-- MENU QUẢN LÝ THƯƠNG HIỆU -->
+            <li class="nav-item">
+                <a class="admin-nav-link <?php echo (isset($_GET['action']) && strpos($_GET['action'], 'rand') !== false) ? 'active' : ''; ?>" href="index.php?controller=admin&action=brands">
+                    <i class="fas fa-gem"></i> Quản lý Thương hiệu
+                </a>
+            </li>
+            <!-- MENU CẤU HÌNH KHUYẾN MÃI -->
             <li class="nav-item">
                 <a class="admin-nav-link <?php echo (isset($_GET['action']) && $_GET['action'] == 'promotions') ? 'active' : ''; ?>" href="index.php?controller=admin&action=promotions">
                     <i class="fas fa-tags"></i> Cấu hình Khuyến mãi
