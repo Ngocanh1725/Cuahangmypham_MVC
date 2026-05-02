@@ -1,6 +1,9 @@
 <?php 
 $pageTitle_Header = "Glow Cosmetics (MVC) - Vẻ đẹp tỏa sáng"; 
 $extraCSS = "
+<!-- Nhúng thư viện Swiper CSS cho hiệu ứng kéo trượt chuyên nghiệp -->
+<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css\" />
+
 <style>
     /* CSS cho Layout Bộ Lọc */
     .filter-sidebar { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #f0f0f0; }
@@ -39,33 +42,213 @@ $extraCSS = "
     }
     .product-card:hover .btn-quick-view { transform: translateY(0); }
     .btn-quick-view:hover { box-shadow: 0 5px 15px rgba(219, 39, 119, 0.4); }
+
+    /* ======================================================== */
+    /* TÙY CHỈNH CSS CHO BANNER SWIPER QUẢNG CÁO                */
+    /* ======================================================== */
+    .hero-section-wrapper {
+        margin-top: 20px;
+        margin-bottom: 40px;
+    }
+    .hero-swiper {
+        width: 100%;
+        padding-top: 10px;
+        padding-bottom: 40px; 
+    }
+    
+    .hero-swiper .swiper-slide {
+        /* Bỏ height cố định, sử dụng Tỷ lệ khung hình (Aspect Ratio) */
+        aspect-ratio: 16 / 9; /* Tỷ lệ cho điện thoại */
+        border-radius: 16px; 
+        overflow: hidden;
+        background-color: #f8fafc; 
+        transition: transform 0.4s ease, opacity 0.4s ease, box-shadow 0.4s ease;
+        
+        /* Hiệu ứng làm mờ và thu nhỏ cho các quảng cáo ở 2 bên */
+        opacity: 0.4;
+        transform: scale(0.9);
+    }
+    
+    @media (min-width: 768px) {
+        .hero-swiper .swiper-slide { 
+            aspect-ratio: 21 / 9; /* Tỷ lệ cho Tablet */
+        }
+    }
+    @media (min-width: 1200px) {
+        .hero-swiper .swiper-slide { 
+            aspect-ratio: 3 / 1; /* TỶ LỆ CHUẨN CHO PC: Bạn hãy tự cắt ảnh theo size 1200 x 400 pixel */
+        } 
+    }
+
+    /* Quảng cáo ĐANG Ở GIỮA sẽ to rõ, nổi bật */
+    .hero-swiper .swiper-slide-active {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        z-index: 2;
+    }
+
+    .hero-swiper .swiper-slide img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* Khi bạn tự cắt ảnh đúng size 1200x400, cover sẽ hiển thị vừa khít 100% không bị hở viền trắng hay cắt chữ */
+        object-position: center;
+    }
+
+    /* CSS cho text nổi trên Banner (Đại sứ thương hiệu) */
+    .banner-overlay-text {
+        position: absolute;
+        bottom: 25px;
+        left: 40px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 15px 25px;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        backdrop-filter: blur(5px);
+        max-width: 60%;
+        transform: translateY(20px);
+        opacity: 0;
+        transition: all 0.5s ease 0.3s;
+        z-index: 5;
+    }
+    .hero-swiper .swiper-slide-active .banner-overlay-text {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    .banner-brand-title {
+        color: var(--brand-dark, #be185d);
+        font-weight: 900;
+        margin-bottom: 5px;
+        font-size: 1.4rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .banner-ambassador {
+        color: #374151;
+        font-size: 1rem;
+        margin-bottom: 0;
+    }
+    .banner-ambassador strong {
+        color: #db2777;
+    }
+    
+    /* Tùy chỉnh Nút điều hướng Trái/Phải */
+    .hero-swiper .swiper-button-next,
+    .hero-swiper .swiper-button-prev {
+        background-color: rgba(255, 255, 255, 0.95);
+        color: var(--brand-dark, #be185d);
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transition: all 0.2s;
+    }
+    .hero-swiper .swiper-button-next:hover,
+    .hero-swiper .swiper-button-prev:hover {
+        background-color: var(--brand-dark, #be185d);
+        color: white;
+        transform: scale(1.1);
+    }
+    .hero-swiper .swiper-button-next:after,
+    .hero-swiper .swiper-button-prev:after {
+        font-size: 1.2rem;
+        font-weight: 900;
+    }
+
+    /* Dấu chấm chuyển slide (Pagination) */
+    .hero-swiper .swiper-pagination-bullet {
+        background-color: #999;
+        opacity: 0.6;
+        width: 8px;
+        height: 8px;
+        transition: all 0.3s;
+    }
+    .hero-swiper .swiper-pagination-bullet-active {
+        background-color: var(--brand-dark, #be185d);
+        opacity: 1;
+        transform: scale(1.5);
+    }
 </style>
 ";
 include 'views/layout/header.php'; 
 include 'views/layout/navbar.php'; 
 ?>
 
-<!-- Hero Section -->
-<section class="hero-section" style="background-color: #fdf2f8; padding: 40px 0;">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-lg-6">
-                <span class="badge bg-white text-danger shadow-sm px-3 py-2 rounded-pill mb-3 fw-bold">🔥 BST Mùa Hè 2024</span>
-                <h1 class="display-5 fw-bold mb-3" style="color: #831843;">Đánh Thức Vẻ Đẹp Tự Nhiên Của Bạn</h1>
-                <p class="text-secondary mb-4">Khám phá hơn 50+ sản phẩm chăm sóc da và trang điểm cao cấp.</p>
-            </div>
-            <div class="col-lg-6 text-center d-none d-lg-block">
-                <img src="https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=800&auto=format&fit=crop" class="img-fluid rounded-4 shadow-sm" style="max-height: 250px; object-fit: cover; width: 80%;">
-            </div>
+<!-- ========================================================== -->
+<!-- HERO SECTION: BANNER SWIPER HIỆU ỨNG THẤY QUẢNG CÁO 2 BÊN -->
+<!-- ========================================================== -->
+<section class="hero-section-wrapper container">
+    <!-- Thẻ chứa Swiper -->
+    <div class="swiper hero-swiper">
+        <div class="swiper-wrapper">
+            
+            <?php if (!empty($banners)): ?>
+                <?php foreach($banners as $banner): ?>
+                    <div class="swiper-slide position-relative">
+                        <?php if (!empty($banner['link'])): ?>
+                            <a href="<?php echo htmlspecialchars($banner['link']); ?>" class="d-block w-100 h-100">
+                                <img src="<?php echo htmlspecialchars($banner['image']); ?>" alt="<?php echo htmlspecialchars($banner['title']); ?>">
+                            </a>
+                        <?php else: ?>
+                            <img src="<?php echo htmlspecialchars($banner['image']); ?>" alt="<?php echo htmlspecialchars($banner['title']); ?>">
+                        <?php endif; ?>
+
+                        <!-- Text nổi (Thương hiệu & Đại sứ) -->
+                        <?php if (!empty($banner['brand_name']) || !empty($banner['ambassador'])): ?>
+                            <div class="banner-overlay-text d-none d-md-block">
+                                <?php if (!empty($banner['brand_name'])): ?>
+                                    <h4 class="banner-brand-title"><?php echo htmlspecialchars($banner['brand_name']); ?></h4>
+                                <?php endif; ?>
+                                <?php if (!empty($banner['ambassador'])): ?>
+                                    <p class="banner-ambassador">Đại sứ thương hiệu: <strong><?php echo htmlspecialchars($banner['ambassador']); ?></strong></p>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+                
+                <!-- Lưu ý: Để hiệu ứng peeking (thấy 2 bên) vòng lặp mượt mà, thư viện cần ít nhất 3 slide. 
+                     Nếu DB có ít hơn 3, tự động chèn thêm slide demo -->
+                <?php if (count($banners) < 3): ?>
+                    <div class="swiper-slide position-relative">
+                        <img src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=1600&auto=format&fit=crop" alt="Skin Care Demo">
+                    </div>
+                    <div class="swiper-slide position-relative">
+                        <img src="https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=1600&auto=format&fit=crop" alt="Makeup Demo">
+                    </div>
+                <?php endif; ?>
+                
+            <?php else: ?>
+                <!-- Slide Dự phòng nếu CSDL chưa có banner -->
+                <div class="swiper-slide position-relative">
+                    <img src="https://images.unsplash.com/photo-1596462502278-27bfdc403348?q=80&w=1600&auto=format&fit=crop" alt="Đại tiệc thương hiệu 1">
+                </div>
+                <div class="swiper-slide position-relative">
+                    <img src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=1600&auto=format&fit=crop" alt="Skincare mùa hè 2">
+                </div>
+                <div class="swiper-slide position-relative">
+                    <img src="https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=1600&auto=format&fit=crop" alt="Xu hướng Makeup 3">
+                </div>
+            <?php endif; ?>
+
         </div>
+        
+        <!-- Nút điều khiển Trái/Phải -->
+        <div class="swiper-button-next"></div>
+        <div class="swiper-button-prev"></div>
+        
+        <!-- Các dấu chấm chỉ thị -->
+        <div class="swiper-pagination"></div>
     </div>
 </section>
+<!-- ========================================================== -->
+
 
 <!-- Main Content (2 Cột) -->
-<section id="products-section" class="container py-5 mt-2">
+<section id="products-section" class="container py-4">
     <div class="row">
         
-        <!-- CỘT TRÁI: BỘ LỌC SIDEBAR (Giữ nguyên như cũ) -->
+        <!-- CỘT TRÁI: BỘ LỌC SIDEBAR -->
         <div class="col-lg-3 mb-4">
             <div class="filter-sidebar shadow-sm">
                 <form action="index.php" method="GET" id="filterForm">
@@ -260,20 +443,54 @@ include 'views/layout/navbar.php';
 </div>
 
 <?php 
-// Javascript xử lý UX/UI cho bộ lọc và Popup Xem Nhanh
+// Javascript xử lý UX/UI và Khởi tạo Swiper Banner
 $extraJS = <<<EOT
+<!-- Thư viện Swiper JS để chạy hiệu ứng kéo vuốt mượt mà -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // 1. Popup Xem Nhanh
+    
+    // ========================================================== 
+    // 1. KHỞI TẠO HIỆU ỨNG SWIPER CHO BANNER
+    // ========================================================== 
+    var swiper = new Swiper(".hero-swiper", {
+        slidesPerView: 1.25,     // Hiển thị 1 slide trọn vẹn ở giữa, và hé 1 phần nhỏ của 2 slide bên cạnh
+        centeredSlides: true,    // Chỉnh slide đang xem ra giữa khung hình
+        spaceBetween: 20,        // Khoảng cách giữa các quảng cáo
+        loop: true,              // Vuốt lặp lại vô tận
+        autoplay: {
+            delay: 4000,
+            disableOnInteraction: false,
+        },
+        pagination: {
+            el: ".swiper-pagination",
+            clickable: true,
+        },
+        navigation: {
+            nextEl: ".swiper-button-next",
+            prevEl: ".swiper-button-prev",
+        },
+        breakpoints: {
+            // Máy tính bảng & PC: Thấy các mép quảng cáo bên cạnh rõ hơn
+            768: {
+                slidesPerView: 1.4,
+                spaceBetween: 30,
+            }
+        }
+    });
+
+    // ========================================================== 
+    // 2. Popup Xem Nhanh Sản Phẩm
+    // ========================================================== 
     const quickViewBtns = document.querySelectorAll('.btn-quick-view');
     const myModal = new bootstrap.Modal(document.getElementById('quickViewModal'));
 
     quickViewBtns.forEach(btn => {
         btn.addEventListener('click', function(e) {
-            e.preventDefault(); // Ngăn chặn thẻ <a> cha chuyển trang
+            e.preventDefault(); 
             e.stopPropagation();
 
-            // Lấy dữ liệu từ nút bấm
             document.getElementById('qv-img').src = this.getAttribute('data-img');
             document.getElementById('qv-name').innerText = this.getAttribute('data-name');
             document.getElementById('qv-cat').innerText = this.getAttribute('data-cat');
@@ -290,7 +507,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // 2. Nút Xem thêm / Thu gọn bộ lọc
+    // ========================================================== 
+    // 3. Nút Xem thêm / Thu gọn bộ lọc
+    // ========================================================== 
     document.querySelectorAll('.btn-view-more').forEach(btn => {
         btn.addEventListener('click', function() {
             const hiddenItems = document.getElementById(this.getAttribute('data-target')).querySelectorAll('.hidden-item');
@@ -304,7 +523,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // 3. Tìm kiếm trong bộ lọc
+    // ========================================================== 
+    // 4. Tìm kiếm trong bộ lọc
+    // ========================================================== 
     document.querySelectorAll('.searchInput').forEach(input => {
         input.addEventListener('keyup', function() {
             const filterText = this.value.toLowerCase().trim();
@@ -324,7 +545,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // 4. Giữ trạng thái Checkbox
+    // ========================================================== 
+    // 5. Giữ trạng thái Checkbox khi load trang
+    // ========================================================== 
     const urlParams = new URLSearchParams(window.location.search);
     document.querySelectorAll('#filterForm input[type="checkbox"]').forEach(cb => {
         if (urlParams.getAll(cb.name).includes(cb.value)) cb.checked = true;

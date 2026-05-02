@@ -54,11 +54,11 @@ class ProductModel {
         if (!empty($params['price']) && is_array($params['price'])) {
             $priceConditions = [];
             foreach ($params['price'] as $range) {
-                $parts = explode('-', $range); // Tách chuỗi '0-500000'
+                $parts = explode('-', $range); 
                 if (count($parts) == 2) {
                     $min = (int)$parts[0];
                     $max = (int)$parts[1];
-                    if ($max == 0) { // Trường hợp "Trên 2.000.000đ" (2000000-)
+                    if ($max == 0) { 
                         $priceConditions[] = "(price >= $min)";
                     } else {
                         $priceConditions[] = "(price >= $min AND price <= $max)";
@@ -74,7 +74,6 @@ class ProductModel {
         if (!empty($params['category']) && is_array($params['category'])) {
             $catConditions = [];
             foreach ($params['category'] as $cat) {
-                // Ánh xạ value của form HTML sang từ khóa trong Database
                 $keyword = $cat; 
                 if ($cat == 'BoChamSoc') $keyword = 'Chăm sóc';
                 if ($cat == 'BongCotton') $keyword = 'Bông';
@@ -91,7 +90,7 @@ class ProductModel {
             }
         }
 
-        // 5. LỌC THƯƠNG HIỆU (Tìm tương đối trong Tên sản phẩm để tránh sót)
+        // 5. LỌC THƯƠNG HIỆU
         if (!empty($params['brand']) && is_array($params['brand'])) {
             $brandConditions = [];
             foreach ($params['brand'] as $brand) {
@@ -117,7 +116,7 @@ class ProductModel {
             }
         }
 
-        // 7. SẮP XẾP SẢN PHẨM (Sorting)
+        // 7. SẮP XẾP SẢN PHẨM
         if (!empty($params['sort'])) {
             if ($params['sort'] == 'price_asc') {
                 $sql .= " ORDER BY price ASC";
@@ -129,13 +128,12 @@ class ProductModel {
                 $sql .= " ORDER BY id DESC";
             }
         } else {
-            $sql .= " ORDER BY id DESC"; // Mặc định
+            $sql .= " ORDER BY id DESC"; 
             if (!empty($params['filter']) && $params['filter'] == 'new') {
                 $sql .= " LIMIT 20";
             }
         }
 
-        // Thực thi Prepare Statement an toàn (Chống SQL Injection)
         $stmt = $this->conn->prepare($sql);
         
         if (!empty($bindParams)) {
@@ -145,7 +143,6 @@ class ProductModel {
                 $$bindName = $bindParams[$i];
                 $bindNames[] = &$$bindName;
             }
-            // Bind mảng động vào stmt
             call_user_func_array([$stmt, 'bind_param'], $bindNames);
         }
         
@@ -162,16 +159,13 @@ class ProductModel {
         return $products;
     }
 
-    // HÀM MỚI: Đếm số lượng sản phẩm theo từng từ khóa (Dành cho Bộ Lọc Sidebar)
     public function getFilterCounts($column, $keywords) {
         $counts = [];
-        // Bảo mật: Chỉ cho phép quét ở cột 'category' hoặc 'name'
         $allowedColumns = ['category', 'name'];
         if (!in_array($column, $allowedColumns)) {
             return $counts;
         }
 
-        // Chuẩn bị câu lệnh SQL Đếm số lượng
         $sql = "SELECT COUNT(*) as total FROM products WHERE $column LIKE ?";
         $stmt = $this->conn->prepare($sql);
 
@@ -179,12 +173,28 @@ class ProductModel {
             $term = "%" . $kw . "%";
             $stmt->bind_param("s", $term);
             $stmt->execute();
-            // Gán số lượng đếm được vào Mảng với key là tên từ khóa
             $counts[$kw] = $stmt->get_result()->fetch_assoc()['total'];
         }
         
         $stmt->close();
         return $counts;
+    }
+
+    // HÀM MỚI: Lấy danh sách banner quảng cáo hoạt động
+    public function getActiveBanners() {
+        $banners = [];
+        try {
+            $sql = "SELECT * FROM banners WHERE status = 1 ORDER BY id DESC";
+            $result = $this->conn->query($sql);
+            if ($result && $result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    $banners[] = $row;
+                }
+            }
+        } catch (Exception $e) {
+            // Bỏ qua lỗi nếu bảng banners chưa được tạo trong Database
+        }
+        return $banners;
     }
 }
 ?>

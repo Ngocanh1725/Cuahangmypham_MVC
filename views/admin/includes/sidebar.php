@@ -67,6 +67,12 @@
                     <i class="fas fa-box-open"></i> Quản lý sản phẩm
                 </a>
             </li>
+            <!-- MENU QUẢN LÝ BANNER (Được thêm mới) -->
+            <li class="nav-item">
+                <a class="admin-nav-link <?php echo (isset($_GET['action']) && strpos($_GET['action'], 'anner') !== false) ? 'active' : ''; ?>" href="index.php?controller=admin&action=banners">
+                    <i class="fas fa-images"></i> Quản lý Banner
+                </a>
+            </li>
             <!-- MENU QUẢN LÝ THƯƠNG HIỆU -->
             <li class="nav-item">
                 <a class="admin-nav-link <?php echo (isset($_GET['action']) && strpos($_GET['action'], 'rand') !== false) ? 'active' : ''; ?>" href="index.php?controller=admin&action=brands">

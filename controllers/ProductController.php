@@ -58,6 +58,9 @@ class ProductController {
         $brandCounts = $this->productModel->getFilterCounts('name', $filterBrands); // Tìm thương hiệu tương đối qua Tên SP
         $volCounts = $this->productModel->getFilterCounts('name', $filterVolumes); 
 
+        // [MỚI] Lấy danh sách Banner để hiển thị ra trang chủ
+        $banners = $this->productModel->getActiveBanners();
+
         // 3. Gọi Model xử lý lọc dữ liệu danh sách sản phẩm
         $products = $this->productModel->getProductsByAdvancedFilter($params);
 

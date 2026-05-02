@@ -60,6 +60,38 @@ class AdminController {
     }
 
     // ---------------------------------------------------------
+    // Hàm xử lý ảnh được cắt từ Cropper.js (dạng chuỗi Base64)
+    // ---------------------------------------------------------
+    private function handleBase64ImageUpload($base64String) {
+        if (empty($base64String)) return false;
+
+        $parts = explode(',', $base64String);
+        if (count($parts) !== 2) return ['error' => 'Dữ liệu ảnh không hợp lệ.'];
+        
+        $imgData = base64_decode($parts[1]);
+        if ($imgData === false) return ['error' => 'Giải mã ảnh thất bại.'];
+
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime_type = $finfo->buffer($imgData);
+        
+        $extension = 'jpg'; // Mặc định xuất ra jpeg
+        if ($mime_type === 'image/png') $extension = 'png';
+        elseif ($mime_type === 'image/webp') $extension = 'webp';
+
+        $newFileName = md5(uniqid(rand(), true)) . '_cropped.' . $extension;
+        $targetDir = "uploads/";
+        if (!file_exists($targetDir)) mkdir($targetDir, 0777, true);
+        
+        $targetFile = $targetDir . $newFileName;
+
+        if (file_put_contents($targetFile, $imgData)) {
+            return ['path' => $targetFile];
+        } else {
+            return ['error' => 'Không thể lưu ảnh đã cắt.'];
+        }
+    }
+
+    // ---------------------------------------------------------
     // Bảng điều khiển (Dashboard)
     // ---------------------------------------------------------
     public function index() {
@@ -88,7 +120,7 @@ class AdminController {
             $name = $_POST['name'] ?? '';
             $price = $_POST['price'] ?? 0;
             $category = $_POST['category'] ?? '';
-            $status = $_POST['status'] ?? 1;
+            $status = isset($_POST['status']) ? intval($_POST['status']) : 1;
             $imagePath = "https://via.placeholder.com/300x300?text=No+Image";
 
             if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
@@ -125,7 +157,7 @@ class AdminController {
             $name = $_POST['name'] ?? '';
             $price = $_POST['price'] ?? 0;
             $category = $_POST['category'] ?? '';
-            $status = $_POST['status'] ?? 1;
+            $status = isset($_POST['status']) ? intval($_POST['status']) : 1;
             $imagePath = $_POST['current_image'] ?? ''; 
 
             if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
@@ -168,9 +200,134 @@ class AdminController {
     }
 
     // ---------------------------------------------------------
+    // QUẢN LÝ BANNER QUẢNG CÁO
+    // ---------------------------------------------------------
+    public function banners() {
+        $this->checkAuth();
+        $banners = $this->adminModel->getAllBanners();
+        $newOrders = $this->adminModel->getNewOrdersCount();
+        require_once 'views/admin/banners.php';
+    }
+
+    public function addBanner() {
+        $this->checkAuth();
+        $message = "";
+
+        if ($_SERVER["REQUEST_METHOD"] == "POST") {
+            $title = $_POST['title'] ?? '';
+            $link = $_POST['link'] ?? '';
+            $brand_name = $_POST['brand_name'] ?? '';
+            $ambassador = $_POST['ambassador'] ?? '';
+            
+            // XỬ LÝ FIX LỖI: Lấy giá trị trực tiếp từ Select Box và ép kiểu INT
+            $status = isset($_POST['status']) ? (int)$_POST['status'] : 1;
+            
+            $cropped_image = $_POST['cropped_image'] ?? '';
+            $imagePath = "";
+
+            if (!empty($cropped_image)) {
+                $uploadResult = $this->handleBase64ImageUpload($cropped_image);
+                if (isset($uploadResult['error'])) {
+                    $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
+                } elseif (isset($uploadResult['path'])) {
+                    $imagePath = $uploadResult['path'];
+                }
+            } elseif (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
+                $uploadResult = $this->handleImageUpload($_FILES['image']);
+                if (isset($uploadResult['error'])) {
+                    $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
+                } elseif (isset($uploadResult['path'])) {
+                    $imagePath = $uploadResult['path'];
+                }
+            } else {
+                $message = "<div class='alert alert-danger'>Vui lòng tải lên hình ảnh cho Banner!</div>";
+            }
+
+            if (empty($message)) {
+                if ($this->adminModel->addBanner($title, $imagePath, $link, $brand_name, $ambassador, $status)) {
+                    header("Location: index.php?controller=admin&action=banners");
+                    exit();
+                } else {
+                    $message = "<div class='alert alert-danger'>Lỗi thêm vào CSDL! Vui lòng kiểm tra lại.</div>";
+                }
+            }
+        }
+        $newOrders = $this->adminModel->getNewOrdersCount();
+        require_once 'views/admin/add_banner.php';
+    }
+
+    public function editBanner() {
+        $this->checkAuth();
+        $message = "";
+        $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+        
+        $banner = $this->adminModel->getBannerById($id);
+        if (!$banner) die("Banner không tồn tại!");
+
+        if ($_SERVER["REQUEST_METHOD"] == "POST") {
+            $title = $_POST['title'] ?? '';
+            $link = $_POST['link'] ?? '';
+            $brand_name = $_POST['brand_name'] ?? '';
+            $ambassador = $_POST['ambassador'] ?? '';
+            
+            // XỬ LÝ FIX LỖI: Lấy giá trị trực tiếp từ Select Box và ép kiểu INT
+            $status = isset($_POST['status']) ? (int)$_POST['status'] : 0;
+            
+            $imagePath = $_POST['current_image'] ?? '';
+            $cropped_image = $_POST['cropped_image'] ?? '';
+
+            if (!empty($cropped_image)) {
+                $uploadResult = $this->handleBase64ImageUpload($cropped_image);
+                if (isset($uploadResult['error'])) {
+                    $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
+                } elseif (isset($uploadResult['path'])) {
+                    $imagePath = $uploadResult['path'];
+                    if (!empty($_POST['current_image']) && file_exists($_POST['current_image']) && strpos($_POST['current_image'], 'http') === false) {
+                        unlink($_POST['current_image']);
+                    }
+                }
+            } elseif (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
+                $uploadResult = $this->handleImageUpload($_FILES['image']);
+                if (isset($uploadResult['error'])) {
+                    $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
+                } elseif (isset($uploadResult['path'])) {
+                    $imagePath = $uploadResult['path'];
+                    if (!empty($_POST['current_image']) && file_exists($_POST['current_image']) && strpos($_POST['current_image'], 'http') === false) {
+                        unlink($_POST['current_image']);
+                    }
+                }
+            }
+
+            if (empty($message)) {
+                if ($this->adminModel->updateBanner($id, $title, $imagePath, $link, $brand_name, $ambassador, $status)) {
+                    header("Location: index.php?controller=admin&action=banners");
+                    exit();
+                } else {
+                    $message = "<div class='alert alert-danger'>Lỗi cập nhật CSDL! Vui lòng thử lại.</div>";
+                }
+            }
+        }
+        $newOrders = $this->adminModel->getNewOrdersCount();
+        require_once 'views/admin/edit_banner.php';
+    }
+
+    public function deleteBanner() {
+        $this->checkAuth();
+        $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+        if ($id > 0) {
+            $banner = $this->adminModel->getBannerById($id);
+            if ($banner && !empty($banner['image']) && file_exists($banner['image']) && strpos($banner['image'], 'http') === false) {
+                unlink($banner['image']);
+            }
+            $this->adminModel->deleteBanner($id);
+        }
+        header("Location: index.php?controller=admin&action=banners");
+        exit();
+    }
+
+    // ---------------------------------------------------------
     // QUẢN LÝ THƯƠNG HIỆU (BRANDS)
     // ---------------------------------------------------------
-    
     public function brands() {
         $this->checkAuth();
         $brands = $this->adminModel->getAllBrands();
@@ -188,14 +345,12 @@ class AdminController {
             $logoPath = "https://via.placeholder.com/150?text=No+Logo";
             $bannerPath = "https://via.placeholder.com/1200x300?text=No+Banner";
 
-            // Upload Logo
             if (isset($_FILES['logo']) && $_FILES['logo']['error'] == 0) {
                 $uploadLogo = $this->handleImageUpload($_FILES['logo']);
                 if (isset($uploadLogo['error'])) $message .= "<div class='alert alert-danger'>Logo: " . $uploadLogo['error'] . "</div>";
                 elseif (isset($uploadLogo['path'])) $logoPath = $uploadLogo['path'];
             }
 
-            // Upload Banner
             if (isset($_FILES['banner']) && $_FILES['banner']['error'] == 0) {
                 $uploadBanner = $this->handleImageUpload($_FILES['banner']);
                 if (isset($uploadBanner['error'])) $message .= "<div class='alert alert-danger'>Banner: " . $uploadBanner['error'] . "</div>";
