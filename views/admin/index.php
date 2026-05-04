@@ -74,23 +74,28 @@ include 'views/layout/header.php';
                 
                 <!-- Doanh thu -->
                 <div class="col-md-4">
-                    <div class="card border-0 shadow-sm stat-card h-100">
-                        <div class="card-body p-4 position-relative">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <div>
-                                    <h6 class="text-muted fw-bold text-uppercase mb-1" style="font-size: 0.8rem; letter-spacing: 1px;">Tổng doanh thu</h6>
-                                    <h2 class="fw-black mb-0" style="color: #be185d; font-weight: 900;"><?php echo number_format($totalRevenue); ?>đ</h2>
+                    <a href="index.php?controller=admin&action=revenueStats" class="text-decoration-none">
+                        <div class="card border-0 shadow-sm stat-card h-100">
+                            <div class="card-body p-4 position-relative">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <h6 class="text-muted fw-bold text-uppercase mb-1" style="font-size: 0.8rem; letter-spacing: 1px;">Tổng doanh thu</h6>
+                                        <h2 class="fw-black mb-0" style="color: #be185d; font-weight: 900;"><?php echo number_format($totalRevenue); ?>đ</h2>
+                                    </div>
+                                    <div class="icon-box bg-pink-light">
+                                        <i class="fas fa-wallet"></i>
+                                    </div>
                                 </div>
-                                <div class="icon-box bg-pink-light">
-                                    <i class="fas fa-wallet"></i>
+                                <div class="mt-4 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1"><i class="fas fa-arrow-up me-1"></i> Tăng 15%</span> 
+                                        <span class="text-muted small ms-1">so với tháng trước</span>
+                                    </div>
+                                    <div class="text-pink small fw-bold" style="color: #be185d;">Xem chi tiết <i class="fas fa-arrow-right ms-1"></i></div>
                                 </div>
-                            </div>
-                            <div class="mt-4">
-                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1"><i class="fas fa-arrow-up me-1"></i> Tăng 15%</span> 
-                                <span class="text-muted small ms-1">so với tháng trước</span>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
                 
                 <!-- Đơn hàng -->

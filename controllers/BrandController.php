@@ -1,7 +1,7 @@
 <?php
 require_once 'models/BrandModel.php';
 require_once 'models/ProductModel.php'; // Nhúng ProductModel để lấy sản phẩm
-
+//Hiển thị danh sách thương hiệu theo chữ cái A-Z và trang riêng của từng hãng mỹ phẩm.
 class BrandController {
     private $brandModel;
     private $db;

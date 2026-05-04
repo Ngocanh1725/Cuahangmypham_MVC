@@ -1,4 +1,6 @@
 <?php
+//Lấy thông tin các thương hiệu đối tác 
+//để hiển thị trên trang chủ và trang danh mục hãng.
 class BrandModel {
     private $conn;
 

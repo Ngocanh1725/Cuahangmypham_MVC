@@ -58,7 +58,7 @@
     <div class="p-2 mt-3 flex-grow-1">
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a class="admin-nav-link <?php echo (!isset($_GET['action']) || $_GET['action'] == 'index') ? 'active' : ''; ?>" href="index.php?controller=admin&action=index">
+                <a class="admin-nav-link <?php echo (!isset($_GET['action']) || $_GET['action'] == 'index' || $_GET['action'] == 'revenueStats') ? 'active' : ''; ?>" href="index.php?controller=admin&action=index">
                     <i class="fas fa-chart-pie"></i> Tổng quan
                 </a>
             </li>
@@ -67,19 +67,16 @@
                     <i class="fas fa-box-open"></i> Quản lý sản phẩm
                 </a>
             </li>
-            <!-- MENU QUẢN LÝ BANNER (Được thêm mới) -->
             <li class="nav-item">
                 <a class="admin-nav-link <?php echo (isset($_GET['action']) && strpos($_GET['action'], 'anner') !== false) ? 'active' : ''; ?>" href="index.php?controller=admin&action=banners">
                     <i class="fas fa-images"></i> Quản lý Banner
                 </a>
             </li>
-            <!-- MENU QUẢN LÝ THƯƠNG HIỆU -->
             <li class="nav-item">
                 <a class="admin-nav-link <?php echo (isset($_GET['action']) && strpos($_GET['action'], 'rand') !== false) ? 'active' : ''; ?>" href="index.php?controller=admin&action=brands">
                     <i class="fas fa-gem"></i> Quản lý Thương hiệu
                 </a>
             </li>
-            <!-- MENU CẤU HÌNH KHUYẾN MÃI -->
             <li class="nav-item">
                 <a class="admin-nav-link <?php echo (isset($_GET['action']) && $_GET['action'] == 'promotions') ? 'active' : ''; ?>" href="index.php?controller=admin&action=promotions">
                     <i class="fas fa-tags"></i> Cấu hình Khuyến mãi
@@ -93,11 +90,31 @@
                     <?php endif; ?>
                 </a>
             </li>
+            
+            <!-- MENU QUẢN LÝ BÀI VIẾT (TẠP CHÍ) -->
+            <li class="nav-item">
+                <a class="admin-nav-link <?php echo (isset($_GET['action']) && strpos($_GET['action'], 'post') !== false) ? 'active' : ''; ?>" href="index.php?controller=admin&action=posts">
+                    <i class="fas fa-newspaper"></i> Quản lý Bài viết
+                </a>
+            </li>
+
+            <!-- MENU PHÂN QUYỀN (CHỈ DÀNH CHO ADMIN) -->
+            <?php if(isset($_SESSION['role']) && $_SESSION['role'] == 1): ?>
             <li class="nav-item">
                 <a class="admin-nav-link <?php echo (isset($_GET['action']) && strpos($_GET['action'], 'user') !== false && $_GET['action'] != 'logout') ? 'active' : ''; ?>" href="index.php?controller=admin&action=users">
                     <i class="fas fa-users-cog"></i> Phân quyền & User
                 </a>
             </li>
+            <?php endif; ?>
+
+            <!-- MENU CẤU HÌNH HỆ THỐNG -->
+            <?php if(isset($_SESSION['role']) && $_SESSION['role'] == 1): ?>
+            <li class="nav-item mt-3">
+                <a class="admin-nav-link <?php echo (isset($_GET['action']) && $_GET['action'] == 'settings') ? 'active' : ''; ?>" href="index.php?controller=admin&action=settings" style="background-color: #f1f5f9;">
+                    <i class="fas fa-cogs text-secondary"></i> Cấu hình Website
+                </a>
+            </li>
+            <?php endif; ?>
         </ul>
     </div>
     
@@ -106,7 +123,7 @@
         <div class="bg-light rounded-4 p-3 text-center border">
             <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($_SESSION['full_name'] ?? 'Admin'); ?>&background=fce7f3&color=be185d" class="rounded-circle mb-2 shadow-sm" width="50">
             <h6 class="fw-bold text-dark mb-1 text-truncate"><?php echo $_SESSION['full_name'] ?? 'Admin'; ?></h6>
-            <p class="small text-muted mb-3">Quản trị viên</p>
+            <p class="small text-muted mb-3"><?php echo (isset($_SESSION['role']) && $_SESSION['role'] == 1) ? 'Quản trị viên' : 'Nhân viên'; ?></p>
             <a href="index.php?controller=user&action=logout" class="d-block text-danger text-decoration-none fw-bold p-2 logout-btn">
                 <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất
             </a>

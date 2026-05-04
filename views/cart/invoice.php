@@ -3,6 +3,8 @@ $pageTitle = "Hóa Đơn #" . $order['id'] . " - Glow Cosmetics";
 $extraCSS = "<style>
     .invoice-card { background: #fff; border-radius: 15px; padding: 40px; }
     .invoice-header { border-bottom: 2px dashed #eee; padding-bottom: 20px; margin-bottom: 20px; }
+    .qr-box { background: #fdfaf7; border: 2px dashed #be185d; border-radius: 16px; padding: 20px; text-align: center; }
+    .qr-image { width: 250px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 15px;}
     @media print {
         body { background: white !important; }
         nav, footer, .no-print { display: none !important; }
@@ -11,6 +13,16 @@ $extraCSS = "<style>
 </style>";
 include 'views/layout/header.php'; 
 include 'views/layout/navbar.php'; 
+
+// =========================================================================
+// THIẾT LẬP THÔNG TIN TÀI KHOẢN NGÂN HÀNG CỦA BẠN TẠI ĐÂY
+// =========================================================================
+$MY_BANK_ID = "MB"; // Tên viết tắt ngân hàng (VD: MB, VCB, TCB, VPB, ACB...)
+$MY_ACCOUNT_NO = "0987654321"; // Số tài khoản của bạn
+$MY_ACCOUNT_NAME = "NGUYEN VAN A"; // Tên chủ tài khoản (Viết hoa không dấu)
+// =========================================================================
+
+$isQR = (isset($order['payment_method']) && $order['payment_method'] == 'Chuyển khoản (Mã QR)');
 ?>
 
 <div class="container py-5">
@@ -24,6 +36,45 @@ include 'views/layout/navbar.php';
                     <h3 class="fw-bold text-success">Đặt hàng thành công!</h3>
                     <p class="text-muted">Cảm ơn bạn đã tin tưởng và mua sắm tại Glow Cosmetics.</p>
                 </div>
+
+                <!-- HIỂN THỊ KHU VỰC QUÉT MÃ QR NẾU KHÁCH CHỌN CHUYỂN KHOẢN -->
+                <?php if($isQR): 
+                    // Tạo nội dung chuyển khoản tự động
+                    $transferMessage = "Thanh toan don hang ORD" . $order['id'];
+                    $amount = $order['total_price'];
+                    
+                    // Link tạo QR code tự động từ VietQR
+                    $qrUrl = "https://img.vietqr.io/image/{$MY_BANK_ID}-{$MY_ACCOUNT_NO}-compact2.png?amount={$amount}&addInfo=" . urlencode($transferMessage) . "&accountName=" . urlencode($MY_ACCOUNT_NAME);
+                ?>
+                <div class="row justify-content-center mb-5 no-print">
+                    <div class="col-md-10">
+                        <div class="qr-box">
+                            <h5 class="fw-bold text-dark mb-3"><i class="fas fa-qrcode text-primary me-2"></i>Quét mã QR để thanh toán</h5>
+                            <img src="<?php echo $qrUrl; ?>" alt="QR Code Thanh Toán" class="qr-image">
+                            
+                            <div class="bg-white p-3 rounded-3 mt-2 text-start border shadow-sm mx-auto" style="max-width: 350px;">
+                                <div class="mb-2 d-flex justify-content-between border-bottom pb-2">
+                                    <span class="text-muted">Ngân hàng:</span> <strong><?php echo $MY_BANK_ID; ?></strong>
+                                </div>
+                                <div class="mb-2 d-flex justify-content-between border-bottom pb-2">
+                                    <span class="text-muted">Chủ TK:</span> <strong><?php echo $MY_ACCOUNT_NAME; ?></strong>
+                                </div>
+                                <div class="mb-2 d-flex justify-content-between border-bottom pb-2">
+                                    <span class="text-muted">Số TK:</span> <strong class="text-primary"><?php echo $MY_ACCOUNT_NO; ?></strong>
+                                </div>
+                                <div class="mb-2 d-flex justify-content-between border-bottom pb-2">
+                                    <span class="text-muted">Số tiền:</span> <strong class="text-danger"><?php echo number_format($amount); ?>đ</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Nội dung:</span> <strong class="text-dark"><?php echo $transferMessage; ?></strong>
+                                </div>
+                            </div>
+                            
+                            <p class="text-danger small fw-bold mt-3 mb-0"><i class="fas fa-exclamation-circle me-1"></i> Đơn hàng sẽ được xử lý ngay khi chúng tôi nhận được thanh toán.</p>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <!-- Header Hóa Đơn -->
                 <div class="invoice-header d-flex flex-column flex-sm-row justify-content-between align-items-center">
@@ -46,7 +97,7 @@ include 'views/layout/navbar.php';
                         <p class="mb-0"><strong>Địa chỉ:</strong> <?php echo htmlspecialchars($order['customer_address']); ?></p>
                     </div>
                     <div class="col-sm-6 text-sm-end mt-3 mt-sm-0">
-                        <h6 class="fw-bold text-muted text-uppercase mb-2">Trạng thái thanh toán</h6>
+                        <h6 class="fw-bold text-muted text-uppercase mb-2">Phương thức thanh toán</h6>
                         <p class="mb-2 fw-bold text-primary">
                             <?php 
                                 if(isset($order['payment_method']) && !empty($order['payment_method'])) {
@@ -56,7 +107,12 @@ include 'views/layout/navbar.php';
                                 }
                             ?>
                         </p>
-                        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill"><?php echo $order['status']; ?></span>
+                        <!-- Nếu là QR thì đơn hàng sẽ chờ xác nhận thanh toán -->
+                        <?php if($isQR && $order['status'] == 'Chờ xử lý'): ?>
+                            <span class="badge bg-warning text-dark px-3 py-2 rounded-pill"><i class="fas fa-clock me-1"></i> Chờ chuyển khoản</span>
+                        <?php else: ?>
+                            <span class="badge bg-secondary px-3 py-2 rounded-pill"><?php echo $order['status']; ?></span>
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -107,7 +163,7 @@ include 'views/layout/navbar.php';
                     <a href="index.php?controller=user&action=orders" class="btn btn-outline-primary px-4 rounded-pill fw-bold"><i class="fas fa-list me-2"></i>Đơn mua của tôi</a>
                     <?php endif; ?>
                     
-                    <button onclick="window.print()" class="btn btn-dark px-4 rounded-pill fw-bold"><i class="fas fa-print me-2"></i>In hóa đơn lưu trữ</button>
+                    <button onclick="window.print()" class="btn btn-dark px-4 rounded-pill fw-bold"><i class="fas fa-print me-2"></i>In hóa đơn</button>
                 </div>
 
             </div>

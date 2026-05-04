@@ -25,6 +25,35 @@ class AdminModel {
         return $row['total'] ? $row['total'] : 0;
     }
 
+    // HÀM MỚI: Tính doanh thu chia theo Tiền mặt (COD) và Chuyển khoản (QR)
+    public function getRevenueByPaymentMethod() {
+        $sql = "SELECT payment_method, SUM(total_price) as total FROM orders WHERE status = 'Hoàn thành' GROUP BY payment_method";
+        $result = $this->conn->query($sql);
+        $data = ['cod' => 0, 'qr' => 0];
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                if (strpos(strtolower($row['payment_method']), 'cod') !== false || strpos(strtolower($row['payment_method']), 'nhận hàng') !== false) {
+                    $data['cod'] += $row['total'];
+                } else {
+                    $data['qr'] += $row['total'];
+                }
+            }
+        }
+        return $data;
+    }
+
+    public function getRevenueDetails() {
+        $sql = "SELECT id, customer_name, customer_phone, order_date, total_price, payment_method FROM orders WHERE status = 'Hoàn thành' ORDER BY order_date DESC";
+        $result = $this->conn->query($sql);
+        $data = [];
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $data[] = $row;
+            }
+        }
+        return $data;
+    }
+
     // ---------------------------------------------------------
     // SẢN PHẨM (PRODUCTS)
     // ---------------------------------------------------------
@@ -40,9 +69,9 @@ class AdminModel {
         return $products;
     }
 
-    public function addProduct($name, $price, $category, $status, $image) {
-        $stmt = $this->conn->prepare("INSERT INTO products (name, price, category, status, image) VALUES (?, ?, ?, ?, ?)");
-        $stmt->bind_param("sdsis", $name, $price, $category, $status, $image);
+    public function addProduct($name, $price, $category, $status, $image, $stock) {
+        $stmt = $this->conn->prepare("INSERT INTO products (name, price, category, status, image, stock) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("sdsisi", $name, $price, $category, $status, $image, $stock);
         $result = $stmt->execute();
         $stmt->close();
         return $result;
@@ -58,9 +87,9 @@ class AdminModel {
         return $product;
     }
 
-    public function updateProduct($id, $name, $price, $category, $status, $image) {
-        $stmt = $this->conn->prepare("UPDATE products SET name=?, price=?, category=?, status=?, image=? WHERE id=?");
-        $stmt->bind_param("sdsisi", $name, $price, $category, $status, $image, $id);
+    public function updateProduct($id, $name, $price, $category, $status, $image, $stock) {
+        $stmt = $this->conn->prepare("UPDATE products SET name=?, price=?, category=?, status=?, image=?, stock=? WHERE id=?");
+        $stmt->bind_param("sdsisii", $name, $price, $category, $status, $image, $stock, $id);
         $result = $stmt->execute();
         $stmt->close();
         return $result;
@@ -83,7 +112,7 @@ class AdminModel {
     }
 
     // ---------------------------------------------------------
-    // QUẢN LÝ BANNER QUẢNG CÁO (ĐÃ SỬA LỖI TRẠNG THÁI)
+    // QUẢN LÝ BANNER QUẢNG CÁO
     // ---------------------------------------------------------
     public function getAllBanners() {
         $banners = [];
@@ -101,7 +130,6 @@ class AdminModel {
 
     public function addBanner($title, $image, $link, $brand_name, $ambassador, $status) {
         try {
-            // Đã bổ sung đẩy đủ 6 tham số vào cơ sở dữ liệu
             $stmt = $this->conn->prepare("INSERT INTO banners (title, image, link, brand_name, ambassador, status) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->bind_param("sssssi", $title, $image, $link, $brand_name, $ambassador, $status);
             $result = $stmt->execute();
@@ -124,7 +152,6 @@ class AdminModel {
 
     public function updateBanner($id, $title, $image, $link, $brand_name, $ambassador, $status) {
         try {
-            // Đã bổ sung đầy đủ 7 tham số để không bị lệch cột trạng thái
             $stmt = $this->conn->prepare("UPDATE banners SET title=?, image=?, link=?, brand_name=?, ambassador=?, status=? WHERE id=?");
             $stmt->bind_param("sssssii", $title, $image, $link, $brand_name, $ambassador, $status, $id);
             $result = $stmt->execute();
@@ -225,6 +252,22 @@ class AdminModel {
         return $order;
     }
 
+    // Lấy chi tiết sản phẩm trong đơn hàng
+    public function getOrderDetails($orderId) {
+        $stmt = $this->conn->prepare("SELECT od.*, p.name, p.image FROM order_details od JOIN products p ON od.product_id = p.id WHERE od.order_id = ?");
+        $stmt->bind_param("i", $orderId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $details = [];
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $details[] = $row;
+            }
+        }
+        $stmt->close();
+        return $details;
+    }
+
     public function getAllUsers() {
         $sql = "SELECT * FROM users ORDER BY role ASC, id DESC";
         $result = $this->conn->query($sql);
@@ -284,6 +327,47 @@ class AdminModel {
         $result = $stmt->execute();
         $stmt->close();
         return $result;
+    }
+
+    // ---------------------------------------------------------
+    // CẤU HÌNH HỆ THỐNG VÀ BÀI VIẾT TẠP CHÍ
+    // ---------------------------------------------------------
+    public function getAllSettings() {
+        $sql = "SELECT * FROM settings";
+        $settings = [];
+        try {
+            $result = $this->conn->query($sql);
+            if ($result && $result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    $settings[$row['setting_key']] = $row;
+                }
+            }
+        } catch (Exception $e) { }
+        return $settings;
+    }
+
+    public function updateSetting($key, $value) {
+        try {
+            $stmt = $this->conn->prepare("UPDATE settings SET setting_value=? WHERE setting_key=?");
+            $stmt->bind_param("ss", $value, $key);
+            $result = $stmt->execute();
+            $stmt->close();
+            return $result;
+        } catch (Exception $e) { return false; }
+    }
+
+    public function getAllPosts() {
+        $posts = [];
+        try {
+            $sql = "SELECT * FROM posts ORDER BY id DESC";
+            $result = $this->conn->query($sql);
+            if ($result && $result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    $posts[] = $row;
+                }
+            }
+        } catch (Exception $e) { }
+        return $posts;
     }
 }
 ?>

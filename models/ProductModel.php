@@ -1,4 +1,6 @@
 <?php
+// Tập trung vào các truy vấn liên quan đến sản phẩm: lấy danh sách, lọc sản phẩm theo tiêu chí (giá, loại, hãng), 
+//và lấy thông tin chi tiết một sản phẩm.
 class ProductModel {
     private $conn;
 
@@ -195,6 +197,19 @@ class ProductModel {
             // Bỏ qua lỗi nếu bảng banners chưa được tạo trong Database
         }
         return $banners;
+    }
+
+    // HÀM MỚI: Lấy thông tin chi tiết 1 sản phẩm theo ID (Fix lỗi 404)
+    public function getProductById($id) {
+        $stmt = $this->conn->prepare("SELECT * FROM products WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        // Thực thi câu lệnh
+        $result = $stmt->get_result();
+        // Dòng cụ thể lấy dữ liệu ra thành mảng $product
+        $product = $result->fetch_assoc();
+        $stmt->close();
+        return $product;
     }
 }
 ?>

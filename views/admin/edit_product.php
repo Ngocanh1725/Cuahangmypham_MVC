@@ -62,12 +62,19 @@ include 'views/layout/header.php';
                                     ?>
                                 </div>
 
-                                <div class="mb-4">
-                                    <label class="form-label fw-bold">Trạng thái kho</label>
-                                    <select name="status" class="form-select">
-                                        <option value="1" <?php if($product['status'] == 1) echo 'selected'; ?>>Còn hàng</option>
-                                        <option value="0" <?php if($product['status'] == 0) echo 'selected'; ?>>Hết hàng</option>
-                                    </select>
+                                <!-- HÀNG CHỨA TỒN KHO VÀ TRẠNG THÁI (MỚI) -->
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Số lượng tồn kho</label>
+                                        <input type="number" name="stock" class="form-control" required min="0" value="<?php echo isset($product['stock']) ? intval($product['stock']) : 0; ?>">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Trạng thái hiển thị</label>
+                                        <select name="status" class="form-select">
+                                            <option value="1" <?php if($product['status'] == 1) echo 'selected'; ?>>Còn hàng</option>
+                                            <option value="0" <?php if($product['status'] == 0) echo 'selected'; ?>>Hết hàng</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 
                                 <div class="d-flex justify-content-end gap-2">

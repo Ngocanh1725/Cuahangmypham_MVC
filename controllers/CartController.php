@@ -1,4 +1,6 @@
 <?php
+//Xử lý logic giỏ hàng (thêm/sửa/xóa sản phẩm trong Session), 
+//quy trình thanh toán (Checkout) và tích hợp API tạo mã QR thanh toán (VietQR).
 class CartController {
     private $conn;
 

@@ -1,4 +1,6 @@
 <?php
+//Xử lý xác thực đăng nhập (password_verify) 
+//và cập nhật thông tin hồ sơ cá nhân của khách hàng.
 class UserModel {
     private $conn;
 

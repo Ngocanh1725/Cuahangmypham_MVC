@@ -30,6 +30,8 @@ include 'views/layout/header.php';
                                 <th class="py-3">Tên sản phẩm</th>
                                 <th class="py-3">Danh mục</th>
                                 <th class="py-3">Giá bán</th>
+                                <!-- CỘT TỒN KHO MỚI -->
+                                <th class="py-3 text-center">Tồn kho</th>
                                 <th class="py-3">Trạng thái</th>
                                 <th class="text-end pe-4 py-3">Hành động</th>
                             </tr>
@@ -44,7 +46,7 @@ include 'views/layout/header.php';
                                     $price = isset($row["price"]) ? number_format($row["price"]) : "0";
                                     $status = isset($row["status"]) ? $row["status"] : 1;
                                     
-                                    // --- XỬ LÝ HIỂN THỊ ẢNH (Kế thừa logic cũ của bạn) ---
+                                    // --- XỬ LÝ HIỂN THỊ ẢNH ---
                                     $imgSrc = isset($row['image']) ? $row['image'] : '';
                                     $displayImg = "https://via.placeholder.com/50?text=No+Img";
 
@@ -52,7 +54,6 @@ include 'views/layout/header.php';
                                         if (strpos($imgSrc, 'http') !== false) {
                                             $displayImg = $imgSrc;
                                         } else {
-                                            // Vì dùng MVC (index.php ở gốc), không cần lùi ../ nữa
                                             $displayImg = $imgSrc;
                                         }
                                     }
@@ -67,6 +68,8 @@ include 'views/layout/header.php';
                                         <td><div class='fw-bold text-dark'><?php echo $name; ?></div></td>
                                         <td><span class='badge bg-light text-dark border'><?php echo $category; ?></span></td>
                                         <td class='fw-bold' style='color: var(--brand-dark)'><?php echo $price; ?>đ</td>
+                                        <!-- HIỂN THỊ DỮ LIỆU TỒN KHO -->
+                                        <td class='fw-bold text-center text-primary'><?php echo isset($row['stock']) ? $row['stock'] : 0; ?></td>
                                         <td><?php echo $statusBadge; ?></td>
                                         <td class='text-end pe-4'>
                                             <a href='index.php?controller=admin&action=editProduct&id=<?php echo $id; ?>' class='btn btn-sm btn-light text-primary me-2 rounded-circle' title='Sửa'>
@@ -79,7 +82,7 @@ include 'views/layout/header.php';
                                     </tr>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                <tr><td colspan='7' class='text-center py-5 text-muted'>Chưa có sản phẩm nào trong kho</td></tr>
+                                <tr><td colspan='8' class='text-center py-5 text-muted'>Chưa có sản phẩm nào trong kho</td></tr>
                             <?php endif; ?>
                         </tbody>
                     </table>

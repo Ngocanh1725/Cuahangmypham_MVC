@@ -1,117 +1,142 @@
-<!-- KHỐI CSS TẠO MÀU SẮC VÀ HIỆU ỨNG -->
+<!-- KHỐI CSS TẠO MÀU SẮC VÀ HIỆU ỨNG TRỰC TIẾP -->
 <style>
-    /* Topbar & Search */
-    .top-promo-bar { background-color: #6a2c91; font-size: 13px; }
-    .search-box-custom { background-color: #f5f5f5; border-radius: 50px; padding: 8px 20px; }
-    .search-box-custom input { border: none; background: transparent; outline: none; width: 100%; box-shadow: none; }
+    /* Thanh thông báo trên cùng chuẩn màu Tạp chí */
+    .top-promo-bar { 
+        background-color: #7A1C1C !important; 
+        color: #ffffff !important; 
+        font-size: 14px; 
+        font-weight: 500; 
+        padding: 10px 0;
+    }
+    
+    /* Logo */
+    .navbar-brand-text { 
+        font-family: 'Playfair Display', serif; 
+        font-size: 2.5rem; 
+        font-weight: 700; 
+        color: #7A1C1C !important; 
+        letter-spacing: -1px; 
+    }
+    
+    /* Các link menu bên trái */
+    .nav-top-links a { 
+        color: #7A1C1C !important; 
+        text-decoration: none; 
+        font-weight: 500; 
+        font-size: 1.05rem; 
+        margin-right: 35px; 
+        transition: opacity 0.3s; 
+    }
+    .nav-top-links a:hover { opacity: 0.6; }
+    
+    /* Các icon bên phải */
+    .nav-icons-right a { 
+        color: #7A1C1C !important; 
+        font-size: 1.3rem; 
+        margin-left: 25px; 
+        text-decoration: none;
+        transition: transform 0.2s;
+    }
+    .nav-icons-right a:hover { transform: scale(1.1); }
+    
+    /* Ẩn mũi tên mặc định của Bootstrap Dropdown */
+    .dropdown-toggle-no-caret::after { display: none !important; }
 
-    /* Pill Navigation (Thanh menu nhiều màu) */
+    /* Thanh Menu phụ (Pill Nav) */
+    .pill-nav-container { border-bottom: 1px solid #f0f0f0; background: #fff; }
     .pill-nav .nav-link {
-        padding: 8px 24px;
-        border-radius: 50px;
-        color: #222 !important;
+        padding: 12px 20px;
+        color: #333 !important;
         font-weight: 500;
-        font-size: 15px;
+        font-size: 14px;
         transition: all 0.2s ease;
         white-space: nowrap;
-        margin: 0 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
-    .pill-nav .nav-link:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-    
-    /* Trạng thái đang chọn (Active) */
-    .pill-nav .nav-link.active-pill {
-        border: 2px solid #444;
-        font-weight: 700 !important;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    .pill-nav .nav-link:hover { color: #7A1C1C !important; background-color: #fdfaf7; }
+    .pill-nav .nav-link.active-pill { 
+        color: #7A1C1C !important; 
+        font-weight: 700 !important; 
+        border-bottom: 2px solid #7A1C1C; 
     }
-    
-    /* Bảng màu chuẩn Pastel theo yêu cầu ảnh mẫu */
-    .bg-pill-brand { background-color: #fce4ec; } /* Hồng pastel cho nút Thương hiệu */
-    .bg-pill-1 { background-color: #ffe0b2; } /* Cam nhạt */
-    .bg-pill-2 { background-color: #ffcdd2; } /* Đỏ/Hồng đậm hơn */
-    .bg-pill-3 { background-color: #dcedc8; } /* Xanh lá nhạt */
-    .bg-pill-4 { background-color: #b3e5fc; } /* Xanh dương nhạt */
-    .bg-pill-5 { background-color: #b2dfdb; } /* Xanh ngọc */
-    .bg-pill-6 { background-color: #ffab91; } /* Cam đậm */
+
+    /* Dropdown tìm kiếm */
+    .search-dropdown-menu {
+        min-width: 300px;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
 </style>
 
-<!-- Tầng 1: Top Promo Bar -->
-<div class="top-promo-bar text-white text-center py-2">
-    Freeship 15K mọi đơn hàng &nbsp;&nbsp;&middot;&nbsp;&nbsp; Mua là có quà &nbsp;&nbsp;&middot;&nbsp;&nbsp; Mua online nhận tại cửa hàng gần nhất
+<!-- Tầng 1: Top Promo Bar (Màu Đỏ Tía) -->
+<div class="top-promo-bar text-center">
+    Miễn phí vận chuyển cho mọi đơn hàng từ 500.000đ
 </div>
 
-<!-- Tầng 2: Main Header -->
-<header class="py-3 border-bottom bg-white">
+<!-- Tầng 2: Main Header (Left Links - Center Logo - Right Icons) -->
+<header class="py-3 bg-white sticky-top shadow-sm">
     <div class="container d-flex align-items-center justify-content-between">
         
-        <!-- Logo -->
-        <a href="index.php" class="text-dark text-decoration-none fs-3 fw-bold tracking-tight d-flex align-items-center">
-            <i class="fas fa-spa me-2" style="color: #be185d;"></i>GLOW <span style="color: #be185d;" class="ms-1">STORE</span>
-        </a>
-
-        <!-- Thanh Tìm Kiếm -->
-        <form action="index.php" method="GET" class="search-box-custom d-flex align-items-center flex-grow-1 mx-5 mb-0">
-            <input type="hidden" name="controller" value="product">
-            <input type="hidden" name="action" value="index">
-            <button type="submit" class="border-0 bg-transparent p-0" title="Tìm kiếm">
-                <i class="fas fa-search text-muted me-2"></i>
-            </button>
-            <input type="text" name="keyword" placeholder="Tìm kiếm sản phẩm, thương hiệu..." value="<?php echo isset($_GET['keyword']) ? htmlspecialchars($_GET['keyword']) : ''; ?>">
-        </form>
-
-        <!-- Các nút công cụ -->
-        <div class="d-flex align-items-center gap-4">
-            <a href="index.php?controller=page&action=stores" class="text-dark text-decoration-none fw-medium d-none d-lg-block">
-                <i class="fas fa-store"></i> Hệ thống cửa hàng
+        <!-- Bên Trái: Menu Links -->
+        <div class="nav-top-links d-none d-lg-flex align-items-center flex-1" style="flex: 1;">
+            <a href="index.php?controller=product&action=index">Sản phẩm</a>
+            <a href="index.php?controller=brand&action=index">Thương hiệu</a>
+            <a href="index.php?controller=page&action=stores">Về chúng tôi</a>
+        </div>
+        
+        <!-- Ở Giữa: Logo -->
+        <div class="text-center d-flex justify-content-center" style="flex: 1;">
+            <a href="index.php" class="navbar-brand-text text-decoration-none">
+                glow.
             </a>
+        </div>
+
+        <!-- Bên Phải: Icons -->
+        <div class="d-flex align-items-center justify-content-end nav-icons-right" style="flex: 1;">
             
-            <a href="index.php?controller=page&action=blog" class="text-dark text-decoration-none fw-medium d-none d-lg-block">
-                <i class="fas fa-book-open"></i> Tạp chí làm đẹp
-            </a>
-
-            <!-- DẤU 3 CHẤM MENU -->
-            <div class="dropdown">
-                <a href="#" class="text-dark fs-5 text-decoration-none dropdown-toggle-no-caret" data-bs-toggle="dropdown" aria-expanded="false" style="padding: 0 5px;">
-                    <i class="fas fa-ellipsis-h"></i>
-                </a>
-                <ul class="dropdown-menu shadow-sm border-0 dropdown-menu-end" style="border-radius: 8px; min-width: 220px; padding: 10px 0; margin-top: 15px;">
-                    <li><a class="dropdown-item py-2 px-3 d-flex align-items-center" href="index.php?controller=page&action=support"><i class="far fa-comments text-dark me-3 opacity-75" style="font-size: 1.1rem; width: 20px; text-align: center;"></i> <span style="font-size: 15px; font-weight: 500;">Trung tâm hỗ trợ</span></a></li>
-                    <li><a class="dropdown-item py-2 px-3 d-flex align-items-center" href="index.php?controller=user&action=orders"><i class="fas fa-box-open text-dark me-3 opacity-75" style="font-size: 1.1rem; width: 20px; text-align: center;"></i> <span style="font-size: 15px; font-weight: 500;">Tra cứu đơn hàng</span></a></li>
-                    <li><a class="dropdown-item py-2 px-3 d-flex align-items-center" href="index.php?controller=page&action=events"><i class="fas fa-store-alt text-dark me-3 opacity-75" style="font-size: 1.1rem; width: 20px; text-align: center;"></i> <span style="font-size: 15px; font-weight: 500;">Sự kiện tại store</span></a></li>
-                </ul>
-            </div>
-            <style>.dropdown-toggle-no-caret::after { display: none !important; }</style>
-
-            <div class="vr"></div> <!-- Dấu gạch dọc phân cách -->
-
-            <!-- === XỬ LÝ NÚT ĐĂNG NHẬP / ĐĂNG XUẤT === -->
+            <!-- Icon Tài khoản -->
             <?php if (isset($_SESSION['user_id'])): ?>
-                <div class="dropdown">
-                    <a href="#" class="text-dark text-decoration-none fw-medium d-flex align-items-center gap-2 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-user-circle fs-4" style="color: #6a2c91;"></i> 
-                        <span class="d-none d-md-inline fw-bold"><?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
+                <div class="dropdown d-inline-block">
+                    <a href="#" class="dropdown-toggle-no-caret" data-bs-toggle="dropdown" aria-expanded="false" title="Tài khoản của tôi">
+                        <i class="far fa-user"></i>
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-3" style="border-radius: 12px; min-width: 220px;">
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-3" style="border-radius: 8px; min-width: 220px;">
+                        <li><h6 class="dropdown-header text-truncate fw-bold" style="color: #7A1C1C;">Xin chào, <?php echo htmlspecialchars($_SESSION['full_name']); ?></h6></li>
                         <?php if($_SESSION['role'] == 1 || $_SESSION['role'] == 2): ?>
-                            <li><a class="dropdown-item py-2" href="index.php?controller=admin&action=index"><i class="fas fa-tachometer-alt text-primary me-2"></i> Trang Quản Trị</a></li>
+                            <li><a class="dropdown-item py-2" href="index.php?controller=admin&action=index"><i class="fas fa-tachometer-alt text-muted me-2"></i> Trang Quản Trị</a></li>
                             <li><hr class="dropdown-divider"></li>
                         <?php endif; ?>
-                        <li><a class="dropdown-item py-2" href="index.php?controller=user&action=orders"><i class="fas fa-box text-secondary me-2"></i> Đơn mua của tôi</a></li>
-                        <li><a class="dropdown-item py-2" href="index.php?controller=user&action=profile"><i class="fas fa-user-cog text-secondary me-2"></i> Hồ sơ cá nhân</a></li>
+                        <li><a class="dropdown-item py-2" href="index.php?controller=user&action=orders"><i class="fas fa-box text-muted me-2"></i> Đơn mua của tôi</a></li>
+                        <li><a class="dropdown-item py-2" href="index.php?controller=user&action=profile"><i class="fas fa-user-cog text-muted me-2"></i> Hồ sơ cá nhân</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item py-2 text-danger fw-bold" href="index.php?controller=user&action=logout"><i class="fas fa-sign-out-alt me-2"></i> Đăng xuất</a></li>
                     </ul>
                 </div>
             <?php else: ?>
-                <a href="index.php?controller=user&action=login" class="text-dark text-decoration-none fw-medium d-flex align-items-center gap-2">
-                    <i class="far fa-user fs-4"></i> <span class="d-none d-md-inline">Đăng nhập</span>
-                </a>
+                <a href="index.php?controller=user&action=login" title="Đăng nhập"><i class="far fa-user"></i></a>
             <?php endif; ?>
 
-            <!-- Giỏ hàng -->
-            <a href="index.php?controller=cart&action=index" class="text-dark position-relative text-decoration-none">
-                <i class="fas fa-shopping-bag fs-4"></i>
+            <!-- Icon Tìm kiếm (Mở popup Dropdown) -->
+            <div class="dropdown d-inline-block">
+                <a href="#" class="dropdown-toggle-no-caret" data-bs-toggle="dropdown" aria-expanded="false" title="Tìm kiếm">
+                    <i class="fas fa-search"></i>
+                </a>
+                <div class="dropdown-menu dropdown-menu-end search-dropdown-menu mt-3 p-2">
+                    <form action="index.php" method="GET" class="d-flex align-items-center bg-light rounded-pill px-3 py-1 m-0">
+                        <input type="hidden" name="controller" value="product">
+                        <input type="hidden" name="action" value="index">
+                        <input type="text" name="keyword" class="form-control border-0 bg-transparent shadow-none" placeholder="Tìm kiếm sản phẩm..." value="<?php echo isset($_GET['keyword']) ? htmlspecialchars($_GET['keyword']) : ''; ?>" required>
+                        <button type="submit" class="btn border-0 text-muted p-1"><i class="fas fa-search"></i></button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Icon Giỏ hàng -->
+            <a href="index.php?controller=cart&action=index" class="position-relative" title="Giỏ hàng">
+                <i class="fas fa-shopping-bag"></i>
                 <?php 
                     $cart_count = 0;
                     if(isset($_SESSION['cart'])) {
@@ -119,7 +144,7 @@
                     }
                     if($cart_count > 0): 
                 ?>
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 10px;">
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 9px; padding: 3px 6px; background-color: #7A1C1C !important;">
                     <?php echo $cart_count; ?>
                 </span>
                 <?php endif; ?>
@@ -133,20 +158,16 @@
     $currentFilter = isset($_GET['filter']) ? $_GET['filter'] : ''; 
     $currentController = isset($_GET['controller']) ? $_GET['controller'] : 'product';
 ?>
-<nav class="bg-white py-3 shadow-sm mb-4">
+<nav class="pill-nav-container mb-4 d-none d-md-block">
     <div class="container">
-        <!-- Áp dụng màu sắc đúng theo ảnh mẫu của bạn -->
-        <div class="d-flex justify-content-center gap-3 flex-wrap pill-nav">
-            
-            <!-- Nút Thương Hiệu mới được thêm vào -->
-            <a href="index.php?controller=brand&action=index" class="nav-link bg-pill-brand <?php echo ($currentController == 'brand') ? 'active-pill' : ''; ?>">Thương hiệu</a>
-            
-            <a href="index.php?controller=product&action=index&filter=promotion" class="nav-link bg-pill-1 <?php echo ($currentFilter == 'promotion') ? 'active-pill' : ''; ?>">Khuyến mãi hot</a>
-            <a href="index.php?controller=product&action=index&filter=makeup" class="nav-link bg-pill-2 <?php echo ($currentFilter == 'makeup') ? 'active-pill' : ''; ?>">Trang điểm</a>
-            <a href="index.php?controller=product&action=index&filter=skincare" class="nav-link bg-pill-3 <?php echo ($currentFilter == 'skincare') ? 'active-pill' : ''; ?>">Chăm Sóc Da Mặt</a>
-            <a href="index.php?controller=product&action=index&filter=hairbody" class="nav-link bg-pill-4 <?php echo ($currentFilter == 'hairbody') ? 'active-pill' : ''; ?>">Chăm sóc cơ thể</a>
-            <a href="index.php?controller=product&action=index&filter=new" class="nav-link bg-pill-5 <?php echo ($currentFilter == 'new') ? 'active-pill' : ''; ?>">Sản Phẩm Mới</a>
-            <a href="index.php?controller=product&action=index&filter=all" class="nav-link bg-pill-6 <?php echo ($currentFilter == 'all' || ($currentFilter == '' && $currentController == 'product')) ? 'active-pill' : ''; ?>">Tất cả</a>
+        <div class="d-flex justify-content-center flex-wrap pill-nav">
+            <a href="index.php?controller=brand&action=index" class="nav-link <?php echo ($currentController == 'brand') ? 'active-pill' : ''; ?>">Thương hiệu</a>
+            <a href="index.php?controller=product&action=index&filter=promotion" class="nav-link <?php echo ($currentFilter == 'promotion') ? 'active-pill' : ''; ?>">Khuyến mãi hot</a>
+            <a href="index.php?controller=product&action=index&filter=makeup" class="nav-link <?php echo ($currentFilter == 'makeup') ? 'active-pill' : ''; ?>">Trang điểm</a>
+            <a href="index.php?controller=product&action=index&filter=skincare" class="nav-link <?php echo ($currentFilter == 'skincare') ? 'active-pill' : ''; ?>">Chăm Sóc Da</a>
+            <a href="index.php?controller=product&action=index&filter=hairbody" class="nav-link <?php echo ($currentFilter == 'hairbody') ? 'active-pill' : ''; ?>">Cơ thể & Tóc</a>
+            <a href="index.php?controller=product&action=index&filter=new" class="nav-link <?php echo ($currentFilter == 'new') ? 'active-pill' : ''; ?>">Mới ra mắt</a>
+            <a href="index.php?controller=product&action=index&filter=all" class="nav-link <?php echo ($currentFilter == 'all' || ($currentFilter == '' && $currentController == 'product')) ? 'active-pill' : ''; ?>">Tất cả</a>
         </div>
     </div>
 </nav>

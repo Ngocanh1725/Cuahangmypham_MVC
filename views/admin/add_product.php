@@ -57,13 +57,22 @@ include 'views/layout/header.php';
                                     <input type="file" name="image" class="form-control" accept="image/*">
                                     <div class="form-text">Cho phép up file ảnh trực tiếp lên hệ thống.</div>
                                 </div>
-                                <div class="mb-4">
-                                    <label class="form-label fw-bold">Trạng thái kho</label>
-                                    <select name="status" class="form-select">
-                                        <option value="1">Còn hàng</option>
-                                        <option value="0">Hết hàng</option>
-                                    </select>
+                                
+                                <!-- HÀNG CHỨA TỒN KHO VÀ TRẠNG THÁI (MỚI) -->
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Số lượng tồn kho</label>
+                                        <input type="number" name="stock" class="form-control" required min="0" value="0">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Trạng thái hiển thị</label>
+                                        <select name="status" class="form-select">
+                                            <option value="1">Còn hàng</option>
+                                            <option value="0">Hết hàng</option>
+                                        </select>
+                                    </div>
                                 </div>
+                                
                                 <div class="d-flex justify-content-end gap-2">
                                     <a href="index.php?controller=admin&action=products" class="btn btn-light px-4">Hủy</a>
                                     <button type="submit" class="btn btn-brand px-4">Lưu sản phẩm</button>

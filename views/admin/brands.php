@@ -39,13 +39,13 @@ include 'views/layout/header.php';
                         <tbody>
                             <?php if(!empty($brands)): ?>
                                 <?php foreach($brands as $row): 
-                                    $logo = !empty($row['logo']) ? $row['logo'] : 'https://via.placeholder.com/60';
-                                    $banner = !empty($row['banner']) ? $row['banner'] : 'https://via.placeholder.com/120';
+                                    $logo = !empty($row['logo']) ? $row['logo'] : 'https://via.placeholder.com/60?text=No+Logo';
+                                    $banner = !empty($row['banner']) ? $row['banner'] : 'https://via.placeholder.com/120x50?text=No+Banner';
                                 ?>
                                     <tr>
                                         <td class='ps-4 fw-bold text-muted'>#<?php echo $row['id']; ?></td>
-                                        <td><img src='<?php echo htmlspecialchars($logo); ?>' class='brand-logo-thumb' alt='logo' onerror="this.src='https://via.placeholder.com/60'"></td>
-                                        <td><img src='<?php echo htmlspecialchars($banner); ?>' class='brand-banner-thumb' alt='banner' onerror="this.src='https://via.placeholder.com/120x50'"></td>
+                                        <td><img src='<?php echo htmlspecialchars($logo, ENT_QUOTES); ?>' class='brand-logo-thumb' alt='logo' onerror="this.src='https://via.placeholder.com/60?text=Error'"></td>
+                                        <td><img src='<?php echo htmlspecialchars($banner, ENT_QUOTES); ?>' class='brand-banner-thumb' alt='banner' onerror="this.src='https://via.placeholder.com/120x50?text=Error'"></td>
                                         <td><div class='fw-bold text-dark fs-5'><?php echo htmlspecialchars($row['name']); ?></div></td>
                                         <td class='text-muted small text-truncate' style='max-width: 250px;' title="<?php echo htmlspecialchars($row['description']); ?>">
                                             <?php echo htmlspecialchars($row['description']); ?>

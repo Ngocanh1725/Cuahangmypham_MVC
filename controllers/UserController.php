@@ -1,6 +1,8 @@
 <?php
 // Nhúng Model để xử lý database
 require_once 'models/UserModel.php';
+// Điều khiển các tính năng Đăng nhập, 
+//Đăng xuất và xem/sửa thông tin cá nhân khách hàng
 
 // Bắt buộc phải có thẻ class này bao bọc toàn bộ
 class UserController {

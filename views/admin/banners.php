@@ -2,7 +2,7 @@
 $pageTitle = "Quản lý Banner Quảng Cáo - Glow Admin"; 
 $extraCSS = "
 <style>
-.banner-thumb { width: 150px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; }
+.banner-thumb { width: 100px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; }
 </style>";
 include 'views/layout/header.php'; 
 ?>

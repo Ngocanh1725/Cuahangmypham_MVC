@@ -1,4 +1,6 @@
 <?php
+//Chuyên trách việc lưu đơn hàng mới, lưu chi tiết đơn hàng (order_details) 
+//và tra cứu lịch sử mua hàng của khách.
 class OrderModel {
     private $conn;
 

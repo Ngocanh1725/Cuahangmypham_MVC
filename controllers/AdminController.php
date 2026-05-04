@@ -19,7 +19,7 @@ class AdminController {
     }
 
     // ---------------------------------------------------------
-    // Hàm xử lý Upload Ảnh bảo mật 4 lớp
+    // Hàm xử lý Upload Ảnh
     // ---------------------------------------------------------
     private function handleImageUpload($file) {
         if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
@@ -59,9 +59,6 @@ class AdminController {
         }
     }
 
-    // ---------------------------------------------------------
-    // Hàm xử lý ảnh được cắt từ Cropper.js (dạng chuỗi Base64)
-    // ---------------------------------------------------------
     private function handleBase64ImageUpload($base64String) {
         if (empty($base64String)) return false;
 
@@ -74,7 +71,7 @@ class AdminController {
         $finfo = new finfo(FILEINFO_MIME_TYPE);
         $mime_type = $finfo->buffer($imgData);
         
-        $extension = 'jpg'; // Mặc định xuất ra jpeg
+        $extension = 'jpg'; 
         if ($mime_type === 'image/png') $extension = 'png';
         elseif ($mime_type === 'image/webp') $extension = 'webp';
 
@@ -92,14 +89,24 @@ class AdminController {
     }
 
     // ---------------------------------------------------------
-    // Bảng điều khiển (Dashboard)
+    // DASHBOARD
     // ---------------------------------------------------------
     public function index() {
         $this->checkAuth();
         $totalProducts = $this->adminModel->getTotalProducts();
         $newOrders = $this->adminModel->getNewOrdersCount();
         $totalRevenue = $this->adminModel->getTotalRevenue();
+        $revenueBreakdown = $this->adminModel->getRevenueByPaymentMethod();
         require_once 'views/admin/index.php';
+    }
+
+    public function revenueStats() {
+        $this->checkAuth();
+        $revenues = $this->adminModel->getRevenueDetails();
+        $totalRevenue = $this->adminModel->getTotalRevenue();
+        $revenueBreakdown = $this->adminModel->getRevenueByPaymentMethod();
+        $newOrders = $this->adminModel->getNewOrdersCount(); 
+        require_once 'views/admin/revenue_stats.php';
     }
 
     // ---------------------------------------------------------
@@ -121,6 +128,7 @@ class AdminController {
             $price = $_POST['price'] ?? 0;
             $category = $_POST['category'] ?? '';
             $status = isset($_POST['status']) ? intval($_POST['status']) : 1;
+            $stock = isset($_POST['stock']) ? intval($_POST['stock']) : 0;
             $imagePath = "https://via.placeholder.com/300x300?text=No+Image";
 
             if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
@@ -133,7 +141,7 @@ class AdminController {
             }
 
             if (empty($message)) {
-                if ($this->adminModel->addProduct($name, $price, $category, $status, $imagePath)) {
+                if ($this->adminModel->addProduct($name, $price, $category, $status, $imagePath, $stock)) {
                     header("Location: index.php?controller=admin&action=products");
                     exit();
                 } else {
@@ -158,6 +166,7 @@ class AdminController {
             $price = $_POST['price'] ?? 0;
             $category = $_POST['category'] ?? '';
             $status = isset($_POST['status']) ? intval($_POST['status']) : 1;
+            $stock = isset($_POST['stock']) ? intval($_POST['stock']) : 0;
             $imagePath = $_POST['current_image'] ?? ''; 
 
             if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
@@ -173,7 +182,7 @@ class AdminController {
             }
 
             if (empty($message)) {
-                if ($this->adminModel->updateProduct($id, $name, $price, $category, $status, $imagePath)) {
+                if ($this->adminModel->updateProduct($id, $name, $price, $category, $status, $imagePath, $stock)) {
                     header("Location: index.php?controller=admin&action=products");
                     exit();
                 } else {
@@ -218,8 +227,6 @@ class AdminController {
             $link = $_POST['link'] ?? '';
             $brand_name = $_POST['brand_name'] ?? '';
             $ambassador = $_POST['ambassador'] ?? '';
-            
-            // XỬ LÝ FIX LỖI: Lấy giá trị trực tiếp từ Select Box và ép kiểu INT
             $status = isset($_POST['status']) ? (int)$_POST['status'] : 1;
             
             $cropped_image = $_POST['cropped_image'] ?? '';
@@ -269,8 +276,6 @@ class AdminController {
             $link = $_POST['link'] ?? '';
             $brand_name = $_POST['brand_name'] ?? '';
             $ambassador = $_POST['ambassador'] ?? '';
-            
-            // XỬ LÝ FIX LỖI: Lấy giá trị trực tiếp từ Select Box và ép kiểu INT
             $status = isset($_POST['status']) ? (int)$_POST['status'] : 0;
             
             $imagePath = $_POST['current_image'] ?? '';
@@ -326,7 +331,7 @@ class AdminController {
     }
 
     // ---------------------------------------------------------
-    // QUẢN LÝ THƯƠNG HIỆU (BRANDS)
+    // QUẢN LÝ THƯƠNG HIỆU
     // ---------------------------------------------------------
     public function brands() {
         $this->checkAuth();
@@ -466,6 +471,24 @@ class AdminController {
         require_once 'views/admin/orders.php';
     }
 
+    // Hiển thị chi tiết đơn hàng
+    public function orderDetail() {
+        $this->checkAuth();
+        $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+        if ($id > 0) {
+            $order = $this->adminModel->getOrderById($id);
+            if (!$order) {
+                die("Đơn hàng không tồn tại!");
+            }
+            $orderDetails = $this->adminModel->getOrderDetails($id);
+            $newOrders = $this->adminModel->getNewOrdersCount();
+            require_once 'views/admin/order_detail.php';
+        } else {
+            header("Location: index.php?controller=admin&action=orders");
+            exit();
+        }
+    }
+
     public function updateOrderStatus() {
         $this->checkAuth();
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -474,7 +497,7 @@ class AdminController {
         if ($id > 0 && !empty($status)) {
             $this->adminModel->updateOrderStatus($id, $status);
         }
-        header("Location: index.php?controller=admin&action=orders");
+        header("Location: index.php?controller=admin&action=orderDetail&id=" . $id);
         exit();
     }
 
@@ -483,6 +506,8 @@ class AdminController {
     // ---------------------------------------------------------
     public function users() {
         $this->checkAuth();
+        if ($_SESSION['role'] != 1) die("Chỉ có Admin cấp cao mới được truy cập quản lý người dùng!");
+
         $users = $this->adminModel->getAllUsers();
         $newOrders = $this->adminModel->getNewOrdersCount(); 
         require_once 'views/admin/users.php';
@@ -559,6 +584,50 @@ class AdminController {
         }
         header("Location: index.php?controller=admin&action=users");
         exit();
+    }
+
+    // ---------------------------------------------------------
+    // CẤU HÌNH HỆ THỐNG
+    // ---------------------------------------------------------
+    public function settings() {
+        $this->checkAuth();
+        if ($_SESSION['role'] != 1) die("Chỉ có Admin cấp cao mới được chỉnh sửa cấu hình hệ thống!");
+
+        $message = "";
+        
+        if ($_SERVER["REQUEST_METHOD"] == "POST") {
+            $site_name = $_POST['site_name'] ?? '';
+            $hotline = $_POST['hotline'] ?? '';
+            $email = $_POST['email'] ?? '';
+            $address = $_POST['address'] ?? '';
+
+            $success = true;
+            $success &= $this->adminModel->updateSetting('site_name', $site_name);
+            $success &= $this->adminModel->updateSetting('hotline', $hotline);
+            $success &= $this->adminModel->updateSetting('email', $email);
+            $success &= $this->adminModel->updateSetting('address', $address);
+
+            if ($success) {
+                $message = "<div class='alert alert-success'><i class='fas fa-check-circle me-2'></i>Cập nhật cấu hình thành công!</div>";
+            } else {
+                $message = "<div class='alert alert-danger'>Đã xảy ra lỗi khi lưu cấu hình.</div>";
+            }
+        }
+
+        $settings = $this->adminModel->getAllSettings();
+        $newOrders = $this->adminModel->getNewOrdersCount(); 
+        
+        require_once 'views/admin/settings.php';
+    }
+
+    // ---------------------------------------------------------
+    // QUẢN LÝ BÀI VIẾT - TẠP CHÍ
+    // ---------------------------------------------------------
+    public function posts() {
+        $this->checkAuth();
+        $posts = $this->adminModel->getAllPosts();
+        $newOrders = $this->adminModel->getNewOrdersCount();
+        require_once 'views/admin/posts.php';
     }
 }
 ?>

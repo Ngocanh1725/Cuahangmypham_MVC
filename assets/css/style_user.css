@@ -1,21 +1,77 @@
+/* ==========================================
+   1. IMPORT GOOGLE FONTS
+   ========================================== */
+@import url('https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+/* ==========================================
+   2. BIẾN MÀU SẮC & FONT CHỮ
+   ========================================== */
 :root {
-    --brand-dark: #be185d;   /* Hồng đậm */
-    --brand-main: #db2777;   /* Hồng chủ đạo */
-    --brand-light: #fce7f3;  /* Hồng nhạt nền */
-    --text-dark: #1f2937;
+    /* Màu chủ đạo: Đỏ tía/Burgundy và Hồng Pastel */
+    --brand-primary: #7A1C1C; 
+    --brand-secondary: #ffcce0; 
+    --brand-dark: #5a1212; 
+    --brand-main: #7A1C1C; /* Ghi đè biến cũ */
+    --brand-light: #fdfaf7; /* Ghi đè biến cũ */
+    
+    /* Màu văn bản & Nền */
+    --text-dark: #333333;
     --text-gray: #6b7280;
+    --bg-body: #ffffff;
+    --bg-card: #f8f8f8;
+    
+    /* Fonts */
+    --font-heading: 'Playfair Display', serif;
+    --font-body: 'Jost', sans-serif;
 }
 
+/* ==========================================
+   3. STYLES CƠ BẢN
+   ========================================== */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: var(--font-body);
     color: var(--text-dark);
-    background-color: #fdfdfd;
+    background-color: var(--bg-body);
+    -webkit-font-smoothing: antialiased;
 }
 
-/* Navbar */
+h1, h2, h3, h4, h5, h6, .serif-font, .hero-title, .section-title, .brand-logo {
+    font-family: var(--font-heading) !important;
+    color: var(--brand-primary);
+}
+
+/* ==========================================
+   4. GHI ĐÈ BOOTSTRAP UTILITIES (Để làm phẳng giao diện)
+   ========================================== */
+/* Bỏ bóng đổ rườm rà */
+.shadow, .shadow-sm, .shadow-lg {
+    box-shadow: none !important;
+}
+
+/* Bỏ viền cong tròn xoe (pill, bo góc lớn) thay bằng góc vuông/bo cực nhẹ */
+.rounded-4, .rounded-3, .rounded-pill {
+    border-radius: 4px !important;
+}
+
+.card {
+    border: 1px solid #f0f0f0 !important;
+    border-radius: 8px !important;
+    background-color: #ffffff;
+}
+
+/* ==========================================
+   5. NAVBAR & HEADER
+   ========================================== */
 .navbar-glow {
     background-color: white;
-    box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.top-promo-bar {
+    background-color: var(--brand-primary) !important;
+    color: white;
+    letter-spacing: 0.5px;
+    font-weight: 400;
 }
 
 .nav-link {
@@ -25,132 +81,244 @@ body {
 }
 
 .nav-link:hover {
-    color: var(--brand-main) !important;
+    color: var(--brand-primary) !important;
 }
 
-.btn-icon {
-    position: relative;
-    color: var(--text-dark);
+/* Ghi đè CSS Pill Nav nhiều màu cũ ở navbar.php */
+.pill-nav .nav-link {
+    background-color: transparent !important;
+    color: var(--text-dark) !important;
+    border-radius: 4px !important;
+    padding: 8px 16px !important;
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.85rem !important;
+    letter-spacing: 1px;
 }
 
-.badge-cart {
-    position: absolute;
-    top: -5px;
-    right: -8px;
-    background-color: var(--brand-main);
+.pill-nav .nav-link:hover {
+    color: var(--brand-primary) !important;
+    background-color: var(--brand-light) !important;
+}
+
+.pill-nav .nav-link.active-pill {
+    border: none !important;
+    background-color: var(--brand-secondary) !important;
+    color: var(--brand-primary) !important;
+    font-weight: 600 !important;
+}
+
+.badge-cart, .badge.bg-danger.position-absolute {
+    background-color: var(--brand-primary) !important;
     color: white;
-    font-size: 0.7rem;
-    padding: 3px 6px;
-    border-radius: 50%;
+    font-family: var(--font-body);
 }
 
-/* Hero Banner */
+/* ==========================================
+   6. HERO BANNER
+   ========================================== */
 .hero-section {
-    background: linear-gradient(135deg, #fff1f2 0%, #fce7f3 100%);
+    background: var(--brand-light);
     padding: 80px 0;
-    border-radius: 0 0 50px 50px;
+    border-radius: 0;
     margin-bottom: 50px;
+    border-bottom: 1px solid #f0f0f0;
 }
 
 .hero-title {
-    color: var(--brand-dark);
-    font-weight: 800;
-    letter-spacing: -1px;
+    color: var(--brand-primary);
+    font-weight: 600;
+    letter-spacing: -0.5px;
 }
 
-/* Product Card */
+/* ==========================================
+   7. THẺ SẢN PHẨM (PRODUCT CARDS)
+   ========================================== */
 .product-card {
-    border: none;
-    border-radius: 15px;
-    transition: all 0.3s ease;
-    background: white;
-    overflow: hidden;
-    position: relative;
+    border: none !important;
+    background: transparent !important;
+    transition: none !important;
+    overflow: visible;
 }
 
 .product-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 10px 25px rgba(219, 39, 119, 0.15);
+    transform: none !important;
 }
 
 .product-img-container {
-    height: 250px;
-    overflow: hidden;
-    background-color: #fff;
+    height: 280px;
+    background-color: var(--bg-card);
+    border-radius: 8px !important;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
+    overflow: hidden;
+    transition: background-color 0.3s;
+}
+
+.product-card:hover .product-img-container {
+    background-color: #ebebeb;
 }
 
 .product-img-container img {
-    max-height: 100%;
-    transition: transform 0.5s ease;
+    max-height: 90%;
+    max-width: 90%;
+    object-fit: contain;
+    transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .product-card:hover .product-img-container img {
-    transform: scale(1.1);
+    transform: scale(1.08);
 }
 
-.badge-new {
+/* Huy hiệu (Badge) trên ảnh */
+.badge-new, .badge-status, .product-card .badge.bg-danger {
     position: absolute;
     top: 15px;
     left: 15px;
-    background-color: var(--brand-main);
-    color: white;
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: bold;
+    background-color: var(--bg-body) !important;
+    color: var(--brand-primary) !important;
+    padding: 6px 14px !important;
+    border-radius: 4px !important;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid #e5e7eb;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: var(--font-body);
 }
 
 .card-body {
-    padding: 20px;
+    padding: 20px 5px !important;
 }
 
-.product-title {
-    font-size: 1.1rem;
+.product-title, .product-title-hover {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
     font-weight: 600;
     margin-bottom: 5px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    color: var(--brand-primary);
 }
 
 .product-category {
     color: var(--text-gray);
-    font-size: 0.85rem;
-    margin-bottom: 15px;
+    font-size: 0.75rem;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 500;
 }
 
 .price {
-    color: var(--brand-dark);
-    font-size: 1.2rem;
-    font-weight: 700;
+    color: var(--text-dark);
+    font-size: 1.15rem;
+    font-weight: 500;
 }
 
-.btn-add-cart {
-    background-color: var(--brand-main);
-    color: white;
-    border: none;
+/* ==========================================
+   8. NÚT BẤM (BUTTONS)
+   ========================================== */
+.btn-brand, .btn-primary, .btn-buy-now, .btn-add-cart-outline {
+    background-color: var(--brand-secondary) !important;
+    color: var(--brand-primary) !important;
+    border: 1px solid var(--brand-secondary) !important;
+    border-radius: 4px !important;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+    box-shadow: 2px 2px 0px rgba(122, 28, 28, 0.1) !important;
+}
+
+.btn-brand:hover, .btn-primary:hover, .btn-buy-now:hover, .btn-add-cart-outline:hover {
+    background-color: var(--brand-primary) !important;
+    color: #ffffff !important;
+    border-color: var(--brand-primary) !important;
+    transform: translateY(-2px);
+    box-shadow: 2px 4px 10px rgba(122, 28, 28, 0.2) !important;
+}
+
+/* Nút thêm vào giỏ nhỏ góc thẻ sản phẩm */
+.btn-add-cart, .btn-light.text-danger {
+    background-color: transparent !important;
+    color: var(--brand-primary) !important;
+    border: 1px solid var(--brand-primary) !important;
     width: 40px;
     height: 40px;
-    border-radius: 50%;
+    border-radius: 50% !important; /* Riêng nút icon nhỏ này giữ hình tròn */
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.3s;
+    transition: all 0.3s;
+    box-shadow: none !important;
 }
 
-.btn-add-cart:hover {
-    background-color: var(--brand-dark);
-    color: white;
+.btn-add-cart:hover, .btn-light.text-danger:hover {
+    background-color: var(--brand-primary) !important;
+    color: white !important;
+    transform: scale(1.1);
 }
 
-/* Footer */
+/* Nút Xem Nhanh overlay */
+.btn-quick-view {
+    background: var(--bg-body) !important;
+    color: var(--brand-primary) !important;
+    border: 1px solid var(--brand-primary) !important;
+    border-radius: 4px !important;
+    padding: 10px 25px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    box-shadow: none !important;
+}
+.btn-quick-view:hover {
+    background: var(--brand-primary) !important;
+    color: white !important;
+}
+
+/* ==========================================
+   9. BỘ LỌC SIDEBAR & FORM
+   ========================================== */
+.filter-sidebar {
+    border-radius: 8px !important;
+    background-color: var(--bg-card);
+    border: none !important;
+    padding: 25px !important;
+}
+
+.filter-title {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    letter-spacing: 0.5px;
+}
+
+.form-control, .form-select {
+    border-radius: 4px !important;
+    border: 1px solid #e5e7eb;
+    box-shadow: none !important;
+}
+.form-control:focus, .form-select:focus {
+    border-color: var(--brand-primary);
+    box-shadow: none !important;
+}
+
+/* ==========================================
+   10. FOOTER
+   ========================================== */
 footer {
-    background-color: #1f2937;
-    color: white;
+    background-color: var(--bg-card);
+    color: var(--text-dark);
     margin-top: 80px;
     padding: 60px 0 20px;
+    border-top: 1px solid #e5e7eb;
+}
+footer a {
+    color: var(--text-gray);
+    transition: color 0.3s;
+}
+footer a:hover {
+    color: var(--brand-primary);
 }

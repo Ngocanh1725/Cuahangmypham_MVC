@@ -41,16 +41,19 @@ include 'views/layout/navbar.php';
                                 </div>
                             </div>
                         </div>
-                        <div class="card mb-4 border shadow-sm">
+                        
+                        <!-- CẬP NHẬT PHƯƠNG THỨC QR CODE Ở ĐÂY -->
+                        <div class="card mb-4 border shadow-sm" style="background-color: #f8fafc;">
                             <div class="card-body p-3">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="payment_method" id="pay_bank" value="Chuyển khoản ngân hàng">
-                                    <label class="form-check-label fw-bold d-flex align-items-center" for="pay_bank">
-                                        <i class="fas fa-university text-primary me-2 fs-5"></i> Chuyển khoản ngân hàng
+                                    <!-- Đổi value thành Mã QR -->
+                                    <input class="form-check-input" type="radio" name="payment_method" id="pay_qr" value="Chuyển khoản (Mã QR)">
+                                    <label class="form-check-label fw-bold d-flex align-items-center" for="pay_qr">
+                                        <i class="fas fa-qrcode text-primary me-2 fs-5"></i> Chuyển khoản / Quét mã QR an toàn
                                     </label>
                                 </div>
                                 <div class="small text-muted mt-2 ms-4">
-                                    Thực hiện chuyển khoản vào tài khoản ngân hàng của Glow Store. Vui lòng ghi rõ Mã Đơn Hàng trong nội dung chuyển khoản.
+                                    Mã QR tự động (chứa sẵn số tiền và mã đơn hàng) sẽ hiển thị ở trang tiếp theo sau khi bạn bấm <strong>Xác nhận đặt hàng</strong>.
                                 </div>
                             </div>
                         </div>
