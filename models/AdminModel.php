@@ -57,21 +57,50 @@ class AdminModel {
     // ---------------------------------------------------------
     // SẢN PHẨM (PRODUCTS)
     // ---------------------------------------------------------
-    public function getAllProducts() {
-        $sql = "SELECT * FROM products ORDER BY id DESC";
-        $result = $this->conn->query($sql);
+    public function getAllProducts($search = '', $category = '', $brand_id = '') {
+        $sql = "SELECT p.*, b.name as brand_name FROM products p LEFT JOIN brands b ON p.brand_id = b.id WHERE 1=1";
+        $types = "";
+        $params = [];
+
+        if (!empty($search)) {
+            $sql .= " AND (p.name LIKE ? OR p.id = ?)";
+            $types .= "si";
+            $params[] = "%$search%";
+            $params[] = intval($search);
+        }
+        if (!empty($category)) {
+            $sql .= " AND p.category = ?";
+            $types .= "s";
+            $params[] = $category;
+        }
+        if (!empty($brand_id)) {
+            $sql .= " AND p.brand_id = ?";
+            $types .= "i";
+            $params[] = intval($brand_id);
+        }
+
+        $sql .= " ORDER BY p.id DESC";
+        
+        $stmt = $this->conn->prepare($sql);
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+
         $products = [];
         if ($result && $result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
                 $products[] = $row;
             }
         }
+        $stmt->close();
         return $products;
     }
 
-    public function addProduct($name, $price, $category, $status, $image, $stock) {
-        $stmt = $this->conn->prepare("INSERT INTO products (name, price, category, status, image, stock) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sdsisi", $name, $price, $category, $status, $image, $stock);
+    public function addProduct($name, $price, $category, $status, $image, $stock, $brand_id = null) {
+        $stmt = $this->conn->prepare("INSERT INTO products (name, price, category, status, image, stock, brand_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("sdsisii", $name, $price, $category, $status, $image, $stock, $brand_id);
         $result = $stmt->execute();
         $stmt->close();
         return $result;
@@ -87,9 +116,9 @@ class AdminModel {
         return $product;
     }
 
-    public function updateProduct($id, $name, $price, $category, $status, $image, $stock) {
-        $stmt = $this->conn->prepare("UPDATE products SET name=?, price=?, category=?, status=?, image=?, stock=? WHERE id=?");
-        $stmt->bind_param("sdsisii", $name, $price, $category, $status, $image, $stock, $id);
+    public function updateProduct($id, $name, $price, $category, $status, $image, $stock, $brand_id = null) {
+        $stmt = $this->conn->prepare("UPDATE products SET name=?, price=?, category=?, status=?, image=?, stock=?, brand_id=? WHERE id=?");
+        $stmt->bind_param("sdsisiii", $name, $price, $category, $status, $image, $stock, $brand_id, $id);
         $result = $stmt->execute();
         $stmt->close();
         return $result;

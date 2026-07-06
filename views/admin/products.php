@@ -20,6 +20,46 @@ include 'views/layout/header.php';
                 </a>
             </div>
             
+            <!-- FORM TÌM KIẾM & LỌC -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
+                <div class="card-body p-3">
+                    <form method="GET" action="index.php" class="row g-3 align-items-center">
+                        <input type="hidden" name="controller" value="admin">
+                        <input type="hidden" name="action" value="products">
+                        
+                        <div class="col-md-4">
+                            <input type="text" name="search" class="form-control" placeholder="Tìm tên sản phẩm, ID..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+                        </div>
+                        <div class="col-md-3">
+                            <select name="category" class="form-select">
+                                <option value="">-- Tất cả danh mục --</option>
+                                <?php 
+                                $categories = ["Chăm sóc da", "Trang điểm", "Nước hoa", "Cơ thể & Tóc", "Son môi"];
+                                foreach($categories as $cat) {
+                                    $selected = (isset($_GET['category']) && $_GET['category'] == $cat) ? 'selected' : '';
+                                    echo "<option value=\"$cat\" $selected>$cat</option>";
+                                }
+                                ?>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select name="brand_id" class="form-select">
+                                <option value="">-- Tất cả thương hiệu --</option>
+                                <?php if(!empty($brandsList)): ?>
+                                    <?php foreach($brandsList as $b): ?>
+                                        <?php $selected = (isset($_GET['brand_id']) && $_GET['brand_id'] == $b['id']) ? 'selected' : ''; ?>
+                                        <option value="<?php echo $b['id']; ?>" <?php echo $selected; ?>><?php echo htmlspecialchars($b['name']); ?></option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-1"></i> Tìm kiếm</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
             <div class="card border-0 shadow-sm rounded-4 table-custom">
                 <div class="card-body p-0">
                     <table class="table table-hover align-middle mb-0">
@@ -29,6 +69,7 @@ include 'views/layout/header.php';
                                 <th class="py-3">Hình ảnh</th>
                                 <th class="py-3">Tên sản phẩm</th>
                                 <th class="py-3">Danh mục</th>
+                                <th class="py-3">Thương hiệu</th>
                                 <th class="py-3">Giá bán</th>
                                 <!-- CỘT TỒN KHO MỚI -->
                                 <th class="py-3 text-center">Tồn kho</th>
@@ -67,6 +108,7 @@ include 'views/layout/header.php';
                                         <td><img src='<?php echo $displayImg; ?>' class='product-img-thumb' alt='img'></td>
                                         <td><div class='fw-bold text-dark'><?php echo $name; ?></div></td>
                                         <td><span class='badge bg-light text-dark border'><?php echo $category; ?></span></td>
+                                        <td><span class='badge bg-secondary text-white'><?php echo isset($row['brand_name']) && $row['brand_name'] ? htmlspecialchars($row['brand_name']) : 'Khác'; ?></span></td>
                                         <td class='fw-bold' style='color: var(--brand-dark)'><?php echo $price; ?>đ</td>
                                         <!-- HIỂN THỊ DỮ LIỆU TỒN KHO -->
                                         <td class='fw-bold text-center text-primary'><?php echo isset($row['stock']) ? $row['stock'] : 0; ?></td>

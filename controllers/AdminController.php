@@ -21,7 +21,7 @@ class AdminController {
     // ---------------------------------------------------------
     // Hàm xử lý Upload Ảnh
     // ---------------------------------------------------------
-    private function handleImageUpload($file) {
+    private function handleImageUpload($file, $folder = 'others') {
         if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
             return false;
         }
@@ -45,7 +45,7 @@ class AdminController {
         }
 
         $newFileName = md5(uniqid(rand(), true)) . '.' . $fileExtension;
-        $targetDir = "uploads/";
+        $targetDir = "assets/images/" . $folder . "/";
         if (!file_exists($targetDir)) {
             mkdir($targetDir, 0777, true);
         }
@@ -59,7 +59,7 @@ class AdminController {
         }
     }
 
-    private function handleBase64ImageUpload($base64String) {
+    private function handleBase64ImageUpload($base64String, $folder = 'others') {
         if (empty($base64String)) return false;
 
         $parts = explode(',', $base64String);
@@ -76,7 +76,7 @@ class AdminController {
         elseif ($mime_type === 'image/webp') $extension = 'webp';
 
         $newFileName = md5(uniqid(rand(), true)) . '_cropped.' . $extension;
-        $targetDir = "uploads/";
+        $targetDir = "assets/images/" . $folder . "/";
         if (!file_exists($targetDir)) mkdir($targetDir, 0777, true);
         
         $targetFile = $targetDir . $newFileName;
@@ -114,7 +114,12 @@ class AdminController {
     // ---------------------------------------------------------
     public function products() {
         $this->checkAuth();
-        $products = $this->adminModel->getAllProducts();
+        $search = $_GET['search'] ?? '';
+        $category = $_GET['category'] ?? '';
+        $brand_id = $_GET['brand_id'] ?? '';
+
+        $products = $this->adminModel->getAllProducts($search, $category, $brand_id);
+        $brandsList = $this->adminModel->getAllBrands();
         $newOrders = $this->adminModel->getNewOrdersCount();
         require_once 'views/admin/products.php';
     }
@@ -127,12 +132,13 @@ class AdminController {
             $name = $_POST['name'] ?? '';
             $price = $_POST['price'] ?? 0;
             $category = $_POST['category'] ?? '';
+            $brand_id = !empty($_POST['brand_id']) ? intval($_POST['brand_id']) : null;
             $status = isset($_POST['status']) ? intval($_POST['status']) : 1;
             $stock = isset($_POST['stock']) ? intval($_POST['stock']) : 0;
             $imagePath = "https://via.placeholder.com/300x300?text=No+Image";
 
             if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-                $uploadResult = $this->handleImageUpload($_FILES['image']);
+                $uploadResult = $this->handleImageUpload($_FILES['image'], 'products');
                 if (isset($uploadResult['error'])) {
                     $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
                 } elseif (isset($uploadResult['path'])) {
@@ -141,7 +147,7 @@ class AdminController {
             }
 
             if (empty($message)) {
-                if ($this->adminModel->addProduct($name, $price, $category, $status, $imagePath, $stock)) {
+                if ($this->adminModel->addProduct($name, $price, $category, $status, $imagePath, $stock, $brand_id)) {
                     header("Location: index.php?controller=admin&action=products");
                     exit();
                 } else {
@@ -150,6 +156,7 @@ class AdminController {
             }
         }
         $newOrders = $this->adminModel->getNewOrdersCount();
+        $brandsList = $this->adminModel->getAllBrands();
         require_once 'views/admin/add_product.php';
     }
 
@@ -165,12 +172,13 @@ class AdminController {
             $name = $_POST['name'] ?? '';
             $price = $_POST['price'] ?? 0;
             $category = $_POST['category'] ?? '';
+            $brand_id = !empty($_POST['brand_id']) ? intval($_POST['brand_id']) : null;
             $status = isset($_POST['status']) ? intval($_POST['status']) : 1;
             $stock = isset($_POST['stock']) ? intval($_POST['stock']) : 0;
             $imagePath = $_POST['current_image'] ?? ''; 
 
             if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-                $uploadResult = $this->handleImageUpload($_FILES['image']);
+                $uploadResult = $this->handleImageUpload($_FILES['image'], 'products');
                 if (isset($uploadResult['error'])) {
                     $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
                 } elseif (isset($uploadResult['path'])) {
@@ -182,7 +190,7 @@ class AdminController {
             }
 
             if (empty($message)) {
-                if ($this->adminModel->updateProduct($id, $name, $price, $category, $status, $imagePath, $stock)) {
+                if ($this->adminModel->updateProduct($id, $name, $price, $category, $status, $imagePath, $stock, $brand_id)) {
                     header("Location: index.php?controller=admin&action=products");
                     exit();
                 } else {
@@ -191,6 +199,7 @@ class AdminController {
             }
         }
         $newOrders = $this->adminModel->getNewOrdersCount();
+        $brandsList = $this->adminModel->getAllBrands();
         require_once 'views/admin/edit_product.php';
     }
 
@@ -233,14 +242,14 @@ class AdminController {
             $imagePath = "";
 
             if (!empty($cropped_image)) {
-                $uploadResult = $this->handleBase64ImageUpload($cropped_image);
+                $uploadResult = $this->handleBase64ImageUpload($cropped_image, 'banners');
                 if (isset($uploadResult['error'])) {
                     $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
                 } elseif (isset($uploadResult['path'])) {
                     $imagePath = $uploadResult['path'];
                 }
             } elseif (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-                $uploadResult = $this->handleImageUpload($_FILES['image']);
+                $uploadResult = $this->handleImageUpload($_FILES['image'], 'banners');
                 if (isset($uploadResult['error'])) {
                     $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
                 } elseif (isset($uploadResult['path'])) {
@@ -282,7 +291,7 @@ class AdminController {
             $cropped_image = $_POST['cropped_image'] ?? '';
 
             if (!empty($cropped_image)) {
-                $uploadResult = $this->handleBase64ImageUpload($cropped_image);
+                $uploadResult = $this->handleBase64ImageUpload($cropped_image, 'banners');
                 if (isset($uploadResult['error'])) {
                     $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
                 } elseif (isset($uploadResult['path'])) {
@@ -292,7 +301,7 @@ class AdminController {
                     }
                 }
             } elseif (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-                $uploadResult = $this->handleImageUpload($_FILES['image']);
+                $uploadResult = $this->handleImageUpload($_FILES['image'], 'banners');
                 if (isset($uploadResult['error'])) {
                     $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
                 } elseif (isset($uploadResult['path'])) {
@@ -351,13 +360,13 @@ class AdminController {
             $bannerPath = "https://via.placeholder.com/1200x300?text=No+Banner";
 
             if (isset($_FILES['logo']) && $_FILES['logo']['error'] == 0) {
-                $uploadLogo = $this->handleImageUpload($_FILES['logo']);
+                $uploadLogo = $this->handleImageUpload($_FILES['logo'], 'brands');
                 if (isset($uploadLogo['error'])) $message .= "<div class='alert alert-danger'>Logo: " . $uploadLogo['error'] . "</div>";
                 elseif (isset($uploadLogo['path'])) $logoPath = $uploadLogo['path'];
             }
 
             if (isset($_FILES['banner']) && $_FILES['banner']['error'] == 0) {
-                $uploadBanner = $this->handleImageUpload($_FILES['banner']);
+                $uploadBanner = $this->handleImageUpload($_FILES['banner'], 'brands');
                 if (isset($uploadBanner['error'])) $message .= "<div class='alert alert-danger'>Banner: " . $uploadBanner['error'] . "</div>";
                 elseif (isset($uploadBanner['path'])) $bannerPath = $uploadBanner['path'];
             }
@@ -390,7 +399,7 @@ class AdminController {
             $bannerPath = $_POST['current_banner'] ?? ''; 
 
             if (isset($_FILES['logo']) && $_FILES['logo']['error'] == 0) {
-                $uploadLogo = $this->handleImageUpload($_FILES['logo']);
+                $uploadLogo = $this->handleImageUpload($_FILES['logo'], 'brands');
                 if (!isset($uploadLogo['error']) && isset($uploadLogo['path'])) {
                     $logoPath = $uploadLogo['path']; 
                     if (!empty($_POST['current_logo']) && file_exists($_POST['current_logo']) && strpos($_POST['current_logo'], 'http') === false) {
@@ -400,7 +409,7 @@ class AdminController {
             }
 
             if (isset($_FILES['banner']) && $_FILES['banner']['error'] == 0) {
-                $uploadBanner = $this->handleImageUpload($_FILES['banner']);
+                $uploadBanner = $this->handleImageUpload($_FILES['banner'], 'brands');
                 if (!isset($uploadBanner['error']) && isset($uploadBanner['path'])) {
                     $bannerPath = $uploadBanner['path']; 
                     if (!empty($_POST['current_banner']) && file_exists($_POST['current_banner']) && strpos($_POST['current_banner'], 'http') === false) {

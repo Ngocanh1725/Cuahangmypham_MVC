@@ -37,7 +37,7 @@ include 'views/layout/header.php';
                                     <input type="text" name="name" class="form-control" required placeholder="Nhập tên mỹ phẩm...">
                                 </div>
                                 <div class="row mb-3">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <label class="form-label fw-bold">Danh mục</label>
                                         <select name="category" class="form-select">
                                             <option value="Chăm sóc da">Chăm sóc da</option>
@@ -47,7 +47,18 @@ include 'views/layout/header.php';
                                             <option value="Son môi">Son môi</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold">Thương hiệu</label>
+                                        <select name="brand_id" class="form-select">
+                                            <option value="">-- Không chọn --</option>
+                                            <?php if(!empty($brandsList)): ?>
+                                                <?php foreach($brandsList as $b): ?>
+                                                    <option value="<?php echo $b['id']; ?>"><?php echo htmlspecialchars($b['name']); ?></option>
+                                                <?php endforeach; ?>
+                                            <?php endif; ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
                                         <label class="form-label fw-bold">Giá bán (VNĐ)</label>
                                         <input type="number" name="price" class="form-control" required placeholder="Ví dụ: 250000">
                                     </div>

@@ -124,9 +124,10 @@ $extraCSS = "
     .bento-img { width: 100%; height: 100%; object-fit: cover; }
     
     /* Cấu hình các khối Bento bằng Aspect Ratio để không bị lệch/cắt ảnh */
-    .col-span-8 { grid-column: span 8; aspect-ratio: 2 / 1; }
-    .col-span-4 { grid-column: span 4; aspect-ratio: 1 / 1; }
+    .col-span-9 { grid-column: span 9; aspect-ratio: 2.5 / 1; }
+    .col-span-3 { grid-column: span 3; aspect-ratio: 5 / 6; }
     .col-span-6 { grid-column: span 6; aspect-ratio: 3 / 2; }
+    .col-span-3-tall { grid-column: span 3; aspect-ratio: 3 / 4; }
     
     .bento-content {
         padding: 30px;
@@ -146,7 +147,7 @@ $extraCSS = "
 
     /* Responsive */
     @media (max-width: 992px) {
-        .col-span-8, .col-span-4, .col-span-6 { 
+        .col-span-9, .col-span-3, .col-span-6, .col-span-3-tall { 
             grid-column: span 12; 
             aspect-ratio: auto;
             height: 350px;
@@ -207,7 +208,7 @@ include 'views/layout/navbar.php';
     <div class="bento-container">
         
         <!-- Ô 1: Ảnh lớn (bento_1) -->
-        <div class="bento-card col-span-8">
+        <div class="bento-card col-span-9">
             <?php if (isset($bentoBanners['bento_1'])): 
                 $b1 = $bentoBanners['bento_1']; ?>
                 <a href="<?php echo htmlspecialchars($b1['link'] ?? '#'); ?>" class="bento-card-link">
@@ -218,53 +219,56 @@ include 'views/layout/navbar.php';
             <?php endif; ?>
         </div>
         
-        <!-- Ô 2: Highlight sản phẩm (bento_2) -->
-        <div class="bento-card col-span-4">
-            <?php if (isset($bentoBanners['bento_2'])): 
-                $b2 = $bentoBanners['bento_2']; ?>
-                <a href="<?php echo htmlspecialchars($b2['link'] ?? '#'); ?>" class="bento-card-link">
-                    <?php if (!empty($b2['image'])): ?>
-                        <img src="<?php echo htmlspecialchars($b2['image']); ?>" alt="<?php echo htmlspecialchars($b2['title']); ?>" class="bento-img" style="height: 60%; object-fit: cover;">
-                    <?php endif; ?>
-                    <div class="bento-content text-center">
-                        <h3 class="font-serif"><?php echo htmlspecialchars($b2['title']); ?></h3>
-                        <?php if (!empty($b2['description'])): ?>
-                            <p><?php echo htmlspecialchars($b2['description']); ?></p>
-                        <?php endif; ?>
-                        <span class="btn btn-outline-dark rounded-pill">Xem thêm</span>
+        <!-- Ô 2: Nút Xem thêm (bento_2) có thể chỉnh sửa từ Admin -->
+        <?php 
+            $b2 = $bentoBanners['bento_2'] ?? null;
+            $btnText = !empty($b2['title']) ? $b2['title'] : 'XEM THÊM';
+            $bgImg = !empty($b2['image']) ? $b2['image'] : '';
+            // Lấy link của bento_2, nếu không có thì lấy link của bento_1
+            $linkXemThem = !empty($b2['link']) ? $b2['link'] : (isset($bentoBanners['bento_1']) ? ($bentoBanners['bento_1']['link'] ?? '#') : 'index.php?controller=product');
+        ?>
+        <div class="bento-card col-span-3 d-flex align-items-center justify-content-center" style="position: relative; background: #f8f8f8; overflow: hidden;">
+            <?php if ($bgImg): ?>
+                <!-- Ảnh mờ đằng sau -->
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('<?php echo htmlspecialchars($bgImg); ?>'); background-size: cover; background-position: center; filter: blur(8px); opacity: 0.7; transform: scale(1.1);"></div>
+            <?php endif; ?>
+            
+            <a href="<?php echo htmlspecialchars($linkXemThem); ?>" class="btn rounded-pill d-flex align-items-center justify-content-center" style="position: relative; z-index: 2; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.8); padding: 10px 25px; font-weight: 600; font-size: 0.95rem; color: #333; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 8px 32px rgba(0,0,0,0.1);">
+                <?php echo htmlspecialchars($btnText); ?>
+            </a>
+        </div>
+
+        <!-- Ô 3A: Sản phẩm lẻ 1 -->
+        <div class="bento-card col-span-3-tall" style="background: #fff; border: 1px solid #eee;">
+            <?php if (!empty($bestSellers[0])): $p1 = $bestSellers[0]; ?>
+                <a href="index.php?controller=product&action=detail&id=<?php echo $p1['id']; ?>" class="bento-card-link d-flex flex-column">
+                    <div style="height: 65%; overflow: hidden;">
+                        <img src="<?php echo htmlspecialchars($p1['image']); ?>" alt="<?php echo htmlspecialchars($p1['name']); ?>" class="bento-img" style="object-fit: contain; padding: 15px; background: #f9f9f9;">
+                    </div>
+                    <div class="bento-content text-center" style="height: 35%; padding: 15px; justify-content: center; background: #fff;">
+                        <h5 class="font-serif text-truncate mb-2" style="font-size: 1.05rem; color: #333;"><?php echo htmlspecialchars($p1['name']); ?></h5>
+                        <p class="text-danger fw-bold mb-0" style="font-size: 1.1rem;"><?php echo number_format($p1['price'], 0, ',', '.'); ?>đ</p>
                     </div>
                 </a>
             <?php else: ?>
-                <div class="bg-light p-4 text-center h-100 d-flex flex-column justify-content-center">
-                    <h3 class="font-serif">Bestseller</h3>
-                    <p>Khám phá sản phẩm được yêu thích nhất.</p>
-                    <a href="index.php?controller=product" class="btn btn-outline-dark rounded-pill">Xem thêm</a>
-                </div>
+                <div class="bg-light h-100 d-flex align-items-center justify-content-center text-muted">Sản phẩm 1</div>
             <?php endif; ?>
         </div>
 
-        <!-- Ô 3: Khối phụ trái (bento_3) -->
-        <div class="bento-card col-span-6">
-            <?php if (isset($bentoBanners['bento_3'])): 
-                $b3 = $bentoBanners['bento_3']; ?>
-                <a href="<?php echo htmlspecialchars($b3['link'] ?? '#'); ?>" class="bento-card-link">
-                    <?php if (!empty($b3['image'])): ?>
-                        <img src="<?php echo htmlspecialchars($b3['image']); ?>" alt="<?php echo htmlspecialchars($b3['title']); ?>" class="bento-img">
-                    <?php endif; ?>
-                    <div class="bento-content" style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.6)); color: white;">
-                        <h3 class="font-serif"><?php echo htmlspecialchars($b3['title']); ?></h3>
-                        <?php if (!empty($b3['description'])): ?>
-                            <p><?php echo htmlspecialchars($b3['description']); ?></p>
-                        <?php endif; ?>
+        <!-- Ô 3B: Sản phẩm lẻ 2 -->
+        <div class="bento-card col-span-3-tall" style="background: #fff; border: 1px solid #eee;">
+            <?php if (!empty($bestSellers[1])): $p2 = $bestSellers[1]; ?>
+                <a href="index.php?controller=product&action=detail&id=<?php echo $p2['id']; ?>" class="bento-card-link d-flex flex-column">
+                    <div style="height: 65%; overflow: hidden;">
+                        <img src="<?php echo htmlspecialchars($p2['image']); ?>" alt="<?php echo htmlspecialchars($p2['name']); ?>" class="bento-img" style="object-fit: contain; padding: 15px; background: #f9f9f9;">
+                    </div>
+                    <div class="bento-content text-center" style="height: 35%; padding: 15px; justify-content: center; background: #fff;">
+                        <h5 class="font-serif text-truncate mb-2" style="font-size: 1.05rem; color: #333;"><?php echo htmlspecialchars($p2['name']); ?></h5>
+                        <p class="text-danger fw-bold mb-0" style="font-size: 1.1rem;"><?php echo number_format($p2['price'], 0, ',', '.'); ?>đ</p>
                     </div>
                 </a>
             <?php else: ?>
-                <div class="bg-secondary text-white h-100">
-                    <div class="bento-content">
-                        <h3 class="font-serif">Blog Làm Đẹp</h3>
-                        <p>Cập nhật mẹo chăm sóc da chuẩn chuyên gia.</p>
-                    </div>
-                </div>
+                <div class="bg-light h-100 d-flex align-items-center justify-content-center text-muted">Sản phẩm 2</div>
             <?php endif; ?>
         </div>
 

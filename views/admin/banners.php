@@ -29,6 +29,7 @@ include 'views/layout/header.php';
                             <tr>
                                 <th class="ps-4 py-3">ID</th>
                                 <th class="py-3">Hình ảnh Banner</th>
+                                <th class="py-3">Phân loại (Vị trí)</th>
                                 <th class="py-3">Tiêu đề (Nội bộ)</th>
                                 <th class="py-3">Đường dẫn khi bấm (Link)</th>
                                 <th class="py-3">Trạng thái</th>
@@ -45,6 +46,17 @@ include 'views/layout/header.php';
                                     <tr>
                                         <td class='ps-4 fw-bold text-muted'>#<?php echo $row['id']; ?></td>
                                         <td><img src='<?php echo htmlspecialchars($row['image']); ?>' class='banner-thumb' alt='banner' onerror="this.src='https://via.placeholder.com/150x60'"></td>
+                                        <td>
+                                            <?php 
+                                            $pos = $row['position'];
+                                            if ($pos == 'hero') echo '<span class="badge bg-primary">Hero Banner</span>';
+                                            elseif ($pos == 'bento_1') echo '<span class="badge bg-info text-dark">Box 1 (Lớn)</span>';
+                                            elseif ($pos == 'bento_2') echo '<span class="badge bg-warning text-dark">Box 2 (Nhỏ)</span>';
+                                            elseif ($pos == 'bento_3') echo '<span class="badge bg-success">Box 3 (Catalog)</span>';
+                                            elseif ($pos == 'bento_4') echo '<span class="badge bg-danger">Box 4 (Blog)</span>';
+                                            else echo '<span class="badge bg-secondary">Khác</span>';
+                                            ?>
+                                        </td>
                                         <td><div class='fw-bold text-dark'><?php echo htmlspecialchars($row['title']); ?></div></td>
                                         <td>
                                             <?php if(!empty($row['link'])): ?>
