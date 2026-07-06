@@ -1,32 +1,32 @@
 <?php
 require_once 'models/ProductModel.php';
-//Quản lý việc hiển thị trang chủ, 
-//trang danh sách sản phẩm (với bộ lọc) và trang chi tiết sản phẩm cho khách hàng.
+
 class ProductController {
     private $productModel;
+    private $db;
 
     public function __construct($db) {
         $this->productModel = new ProductModel($db);
+        $this->db = $db;
     }
 
     // ---------------------------------------------------------
-    // 1. ACTION INDEX: Hiển thị danh sách sản phẩm & Trang chủ
+    // 1. ACTION INDEX: Hiển thị Trang chủ & Trang Cửa hàng
     // ---------------------------------------------------------
     public function index() {
-        // 1. Gom tất cả tham số từ URL (Checkbox, Dropdown Sắp xếp)
+        // 1. Gom tất cả tham số từ URL
         $params = [
             'filter'   => isset($_GET['filter']) ? $_GET['filter'] : 'all',
             'keyword'  => isset($_GET['keyword']) ? trim($_GET['keyword']) : '',
             'price'    => isset($_GET['price']) ? $_GET['price'] : [],
             'category' => isset($_GET['category']) ? $_GET['category'] : [],
             'brand'    => isset($_GET['brand']) ? $_GET['brand'] : [],
-            'volume'   => isset($_GET['volume']) ? $_GET['volume'] : [],
             'sort'     => isset($_GET['sort']) ? $_GET['sort'] : ''
         ];
 
         // 2. Thiết lập Tiêu đề động
-        $pageTitle = "Dành Riêng Cho Bạn";
-        $subTitle = "Sản phẩm nổi bật";
+        $pageTitle = "Cửa Hàng Mỹ Phẩm";
+        $subTitle = "Khám phá các sản phẩm nổi bật";
 
         if (!empty($params['keyword'])) {
             $pageTitle = "Kết quả tìm kiếm"; 
@@ -51,59 +51,63 @@ class ProductController {
             $subTitle = "Nuôi dưỡng toàn diện";
         }
 
-        // --- TÍNH TOÁN SỐ LƯỢNG ĐỘNG CHO BỘ LỌC ---
-        // 1. Khai báo danh sách các mục bộ lọc cần hiển thị
-        $filterCategories = ['Bông cotton', 'Che khuyết điểm', 'Chì kẻ mắt', 'Chì kẻ mày', 'Cọ trang điểm', 'Dưỡng Môi', 'ELC', 'Highlighter', 'Kem nền', 'Phấn phủ', 'Son môi'];
-        $filterBrands = ['Anessa', 'Bioderma', 'Cerave', 'Dior', 'Eucerin', 'La Roche-Posay', 'M.A.C', 'Maybelline', "L'Oreal"];
-        $filterVolumes = ['100ml', '50ml', '250ml', '15g', '20g'];
+        // 3. Lấy Dữ Liệu Động (Cho Bộ lọc & Trang Chủ)
+        
+        // Cập nhật danh mục động
+        $filterCategories = $this->productModel->getUniqueCategories();
+        
+        // Cập nhật thương hiệu động
+        require_once 'models/BrandModel.php';
+        $brandModel = new BrandModel($this->db);
+        $brandsData = $brandModel->getAllBrands();
+        $filterBrands = [];
+        if (!empty($brandsData)) {
+            foreach($brandsData as $b) { 
+                $filterBrands[] = $b['name']; 
+            }
+        }
 
-        // 2. Lấy số lượng (Count) từ Database
+        // Đếm số lượng sản phẩm cho bộ lọc
         $catCounts = $this->productModel->getFilterCounts('category', $filterCategories);
-        $brandCounts = $this->productModel->getFilterCounts('name', $filterBrands); // Tìm thương hiệu tương đối qua Tên SP
-        $volCounts = $this->productModel->getFilterCounts('name', $filterVolumes); 
+        $brandCounts = $this->productModel->getFilterCounts('name', $filterBrands); 
 
-        // [MỚI] Lấy danh sách Banner để hiển thị ra trang chủ
+        // Lấy Banner
         $banners = $this->productModel->getActiveBanners();
 
-        // 3. Gọi Model xử lý lọc dữ liệu danh sách sản phẩm
-        $products = $this->productModel->getProductsByAdvancedFilter($params);
+        // Lấy Best Sellers
+        $bestSellers = $this->productModel->getBestSellers(4);
 
-        // Lưu lại $currentFilter để View hiển thị active
+        // Lấy Dữ liệu sản phẩm (cho Lưới)
+        $products = $this->productModel->getProductsByAdvancedFilter($params);
         $currentFilter = $params['filter'];
 
-        // 4. Gọi View hiển thị
+        // Gọi View
         require_once 'views/products/index.php';
     }
 
     // ---------------------------------------------------------
-    // 2. ACTION DETAIL: Hiển thị chi tiết một sản phẩm (Fix Lỗi 404)
+    // 2. ACTION DETAIL: Hiển thị chi tiết một sản phẩm
     // ---------------------------------------------------------
     public function detail() {
-        // Lấy ID sản phẩm từ URL (vd: index.php?controller=product&action=detail&id=1)
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         
         if ($id <= 0) {
-            // Nếu không có ID hợp lệ, quay về trang chủ
             header("Location: index.php");
             exit();
         }
 
-        // Gọi Model để lấy dữ liệu sản phẩm theo ID
         $product = $this->productModel->getProductById($id);
         
         if (!$product) {
-            die("<div style='text-align:center; padding: 100px; font-family: sans-serif;'>
-                    <h1 style='color: #7A1C1C; font-size: 4rem;'>404</h1>
-                    <h2>Không tìm thấy sản phẩm!</h2>
-                    <p>Sản phẩm bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
-                    <a href='index.php' style='display: inline-block; margin-top: 20px; padding: 10px 25px; background: #7A1C1C; color: white; text-decoration: none; border-radius: 4px;'>Quay về trang chủ</a>
-                 </div>");
+            die("<div class='container py-5 text-center'><h2>Lỗi 404: Không tìm thấy sản phẩm!</h2><a href='index.php'>Quay về trang chủ</a></div>");
         }
 
-        // Truyền tiêu đề cho thẻ <title> trên trình duyệt
         $pageTitle = $product['name'] . " - Glow Cosmetics";
         
-        // Gọi View hiển thị trang chi tiết sản phẩm
+        // Lấy sản phẩm liên quan
+        $relatedProducts = $this->productModel->getRelatedProducts($product['category'], $id, 4);
+        
+        // Gọi View
         require_once 'views/products/detail.php';
     }
 }

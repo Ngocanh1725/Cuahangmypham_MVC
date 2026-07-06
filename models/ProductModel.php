@@ -1,6 +1,4 @@
 <?php
-// Tập trung vào các truy vấn liên quan đến sản phẩm: lấy danh sách, lọc sản phẩm theo tiêu chí (giá, loại, hãng), 
-//và lấy thông tin chi tiết một sản phẩm.
 class ProductModel {
     private $conn;
 
@@ -8,6 +6,7 @@ class ProductModel {
         $this->conn = $db;
     }
 
+    // 1. Lấy tất cả sản phẩm
     public function getAllProducts() {
         $sql = "SELECT * FROM products ORDER BY id DESC";
         $result = $this->conn->query($sql);
@@ -21,13 +20,114 @@ class ProductModel {
         return $products;
     }
 
-    // HÀM MỚI: Xử lý bộ lọc nâng cao (Giá, Loại, Thương hiệu, Dung tích)
+    // 2. Lấy thông tin 1 sản phẩm theo ID
+    public function getProductById($id) {
+        $stmt = $this->conn->prepare("SELECT * FROM products WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $product = $result->fetch_assoc();
+        $stmt->close();
+        return $product;
+    }
+
+    // 3. Lấy danh sách banner quảng cáo hoạt động
+    public function getActiveBanners() {
+        $banners = [];
+        try {
+            $sql = "SELECT * FROM banners WHERE status = 1 ORDER BY id DESC";
+            $result = $this->conn->query($sql);
+            if ($result && $result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    $banners[] = $row;
+                }
+            }
+        } catch (Exception $e) {
+            // Bỏ qua lỗi nếu bảng banners chưa được tạo
+        }
+        return $banners;
+    }
+
+    // 4. Lấy số lượng sản phẩm theo từng mục bộ lọc
+    public function getFilterCounts($column, $keywords) {
+        $counts = [];
+        $allowedColumns = ['category', 'name'];
+        if (!in_array($column, $allowedColumns)) {
+            return $counts;
+        }
+
+        $sql = "SELECT COUNT(*) as total FROM products WHERE $column LIKE ?";
+        $stmt = $this->conn->prepare($sql);
+
+        foreach ($keywords as $kw) {
+            $term = "%" . $kw . "%";
+            $stmt->bind_param("s", $term);
+            $stmt->execute();
+            $counts[$kw] = $stmt->get_result()->fetch_assoc()['total'];
+        }
+        
+        $stmt->close();
+        return $counts;
+    }
+
+    // ---------------------------------------------------------
+    // CÁC HÀM MỚI CHO BƯỚC 6 (Dữ liệu động)
+    // ---------------------------------------------------------
+
+    // 5. Lấy danh sách các danh mục duy nhất có trong CSDL
+    public function getUniqueCategories() {
+        $sql = "SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != ''";
+        $result = $this->conn->query($sql);
+        $categories = [];
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $categories[] = $row['category'];
+            }
+        }
+        return $categories;
+    }
+
+    // 6. Lấy danh sách sản phẩm bán chạy (Trang chủ)
+    public function getBestSellers($limit = 4) {
+        $sql = "SELECT * FROM products WHERE status = 1 ORDER BY id ASC LIMIT ?";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("i", $limit);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $products = [];
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) { 
+                $products[] = $row; 
+            }
+        }
+        $stmt->close();
+        return $products;
+    }
+
+    // 7. Lấy sản phẩm liên quan cùng danh mục (Trang chi tiết)
+    public function getRelatedProducts($category, $exclude_id, $limit = 4) {
+        $sql = "SELECT * FROM products WHERE category = ? AND id != ? AND status = 1 ORDER BY id DESC LIMIT ?";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("sii", $category, $exclude_id, $limit);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $products = [];
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) { 
+                $products[] = $row; 
+            }
+        }
+        $stmt->close();
+        return $products;
+    }
+
+    // 8. XỬ LÝ BỘ LỌC NÂNG CAO (Trang Cửa Hàng)
     public function getProductsByAdvancedFilter($params) {
-        $sql = "SELECT * FROM products WHERE 1=1";
+        $sql = "SELECT * FROM products WHERE 1=1 AND status = 1";
         $bindParams = [];
         $types = "";
 
-        // 1. Tìm kiếm bằng thanh Search
+        // Lọc từ khóa
         if (!empty($params['keyword'])) {
             $sql .= " AND (name LIKE ? OR category LIKE ?)";
             $types .= "ss";
@@ -36,7 +136,7 @@ class ProductModel {
             $bindParams[] = $searchParam;
         }
 
-        // 2. Lọc theo các Tab menu ngang (Khuyến mãi, Skincare, Makeup...)
+        // Lọc Menu Navbar ngang
         if (!empty($params['filter']) && $params['filter'] != 'all') {
             $filter = $params['filter'];
             if ($filter == 'promotion') {
@@ -52,7 +152,7 @@ class ProductModel {
             }
         }
 
-        // 3. LỌC GIÁ SẢN PHẨM (Từ Checkbox)
+        // Lọc theo khoảng giá
         if (!empty($params['price']) && is_array($params['price'])) {
             $priceConditions = [];
             foreach ($params['price'] as $range) {
@@ -72,27 +172,20 @@ class ProductModel {
             }
         }
 
-        // 4. LỌC LOẠI SẢN PHẨM
+        // Lọc danh mục
         if (!empty($params['category']) && is_array($params['category'])) {
             $catConditions = [];
             foreach ($params['category'] as $cat) {
-                $keyword = $cat; 
-                if ($cat == 'BoChamSoc') $keyword = 'Chăm sóc';
-                if ($cat == 'BongCotton') $keyword = 'Bông';
-                if ($cat == 'ChamSocCoThe') $keyword = 'Cơ thể';
-                if ($cat == 'ChamSocSucKhoe') $keyword = 'Sức khỏe';
-                if ($cat == 'CheKhuyetDiem') $keyword = 'Khuyết điểm';
-                
                 $catConditions[] = "category LIKE ?";
                 $types .= "s";
-                $bindParams[] = "%" . $keyword . "%";
+                $bindParams[] = "%" . $cat . "%";
             }
             if (!empty($catConditions)) {
                 $sql .= " AND (" . implode(" OR ", $catConditions) . ")";
             }
         }
 
-        // 5. LỌC THƯƠNG HIỆU
+        // Lọc thương hiệu (tương đối qua tên SP)
         if (!empty($params['brand']) && is_array($params['brand'])) {
             $brandConditions = [];
             foreach ($params['brand'] as $brand) {
@@ -105,20 +198,7 @@ class ProductModel {
             }
         }
 
-        // 6. LỌC DUNG TÍCH
-        if (!empty($params['volume']) && is_array($params['volume'])) {
-            $volConditions = [];
-            foreach ($params['volume'] as $vol) {
-                $volConditions[] = "name LIKE ?";
-                $types .= "s";
-                $bindParams[] = "%" . $vol . "%";
-            }
-            if (!empty($volConditions)) {
-                $sql .= " AND (" . implode(" OR ", $volConditions) . ")";
-            }
-        }
-
-        // 7. SẮP XẾP SẢN PHẨM
+        // Sắp xếp
         if (!empty($params['sort'])) {
             if ($params['sort'] == 'price_asc') {
                 $sql .= " ORDER BY price ASC";
@@ -136,6 +216,7 @@ class ProductModel {
             }
         }
 
+        // Thực thi
         $stmt = $this->conn->prepare($sql);
         
         if (!empty($bindParams)) {
@@ -159,57 +240,6 @@ class ProductModel {
         }
         $stmt->close();
         return $products;
-    }
-
-    public function getFilterCounts($column, $keywords) {
-        $counts = [];
-        $allowedColumns = ['category', 'name'];
-        if (!in_array($column, $allowedColumns)) {
-            return $counts;
-        }
-
-        $sql = "SELECT COUNT(*) as total FROM products WHERE $column LIKE ?";
-        $stmt = $this->conn->prepare($sql);
-
-        foreach ($keywords as $kw) {
-            $term = "%" . $kw . "%";
-            $stmt->bind_param("s", $term);
-            $stmt->execute();
-            $counts[$kw] = $stmt->get_result()->fetch_assoc()['total'];
-        }
-        
-        $stmt->close();
-        return $counts;
-    }
-
-    // HÀM MỚI: Lấy danh sách banner quảng cáo hoạt động
-    public function getActiveBanners() {
-        $banners = [];
-        try {
-            $sql = "SELECT * FROM banners WHERE status = 1 ORDER BY id DESC";
-            $result = $this->conn->query($sql);
-            if ($result && $result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    $banners[] = $row;
-                }
-            }
-        } catch (Exception $e) {
-            // Bỏ qua lỗi nếu bảng banners chưa được tạo trong Database
-        }
-        return $banners;
-    }
-
-    // HÀM MỚI: Lấy thông tin chi tiết 1 sản phẩm theo ID (Fix lỗi 404)
-    public function getProductById($id) {
-        $stmt = $this->conn->prepare("SELECT * FROM products WHERE id = ?");
-        $stmt->bind_param("i", $id);
-        $stmt->execute();
-        // Thực thi câu lệnh
-        $result = $stmt->get_result();
-        // Dòng cụ thể lấy dữ liệu ra thành mảng $product
-        $product = $result->fetch_assoc();
-        $stmt->close();
-        return $product;
     }
 }
 ?>
