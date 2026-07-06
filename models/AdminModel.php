@@ -128,10 +128,10 @@ class AdminModel {
         return $banners;
     }
 
-    public function addBanner($title, $image, $link, $brand_name, $ambassador, $status) {
+    public function addBanner($title, $image, $link, $description, $position, $status) {
         try {
-            $stmt = $this->conn->prepare("INSERT INTO banners (title, image, link, brand_name, ambassador, status) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssssi", $title, $image, $link, $brand_name, $ambassador, $status);
+            $stmt = $this->conn->prepare("INSERT INTO banners (title, image, link, description, position, status) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("sssssi", $title, $image, $link, $description, $position, $status);
             $result = $stmt->execute();
             $stmt->close();
             return $result;
@@ -150,10 +150,10 @@ class AdminModel {
         } catch (Exception $e) { return null; }
     }
 
-    public function updateBanner($id, $title, $image, $link, $brand_name, $ambassador, $status) {
+    public function updateBanner($id, $title, $image, $link, $description, $position, $status) {
         try {
-            $stmt = $this->conn->prepare("UPDATE banners SET title=?, image=?, link=?, brand_name=?, ambassador=?, status=? WHERE id=?");
-            $stmt->bind_param("sssssii", $title, $image, $link, $brand_name, $ambassador, $status, $id);
+            $stmt = $this->conn->prepare("UPDATE banners SET title=?, image=?, link=?, description=?, position=?, status=? WHERE id=?");
+            $stmt->bind_param("sssssii", $title, $image, $link, $description, $position, $status, $id);
             $result = $stmt->execute();
             $stmt->close();
             return $result;

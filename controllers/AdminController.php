@@ -225,8 +225,8 @@ class AdminController {
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $title = $_POST['title'] ?? '';
             $link = $_POST['link'] ?? '';
-            $brand_name = $_POST['brand_name'] ?? '';
-            $ambassador = $_POST['ambassador'] ?? '';
+            $description = $_POST['description'] ?? '';
+            $position = $_POST['position'] ?? 'hero';
             $status = isset($_POST['status']) ? (int)$_POST['status'] : 1;
             
             $cropped_image = $_POST['cropped_image'] ?? '';
@@ -251,7 +251,7 @@ class AdminController {
             }
 
             if (empty($message)) {
-                if ($this->adminModel->addBanner($title, $imagePath, $link, $brand_name, $ambassador, $status)) {
+                if ($this->adminModel->addBanner($title, $imagePath, $link, $description, $position, $status)) {
                     header("Location: index.php?controller=admin&action=banners");
                     exit();
                 } else {
@@ -274,8 +274,8 @@ class AdminController {
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $title = $_POST['title'] ?? '';
             $link = $_POST['link'] ?? '';
-            $brand_name = $_POST['brand_name'] ?? '';
-            $ambassador = $_POST['ambassador'] ?? '';
+            $description = $_POST['description'] ?? '';
+            $position = $_POST['position'] ?? 'hero';
             $status = isset($_POST['status']) ? (int)$_POST['status'] : 0;
             
             $imagePath = $_POST['current_image'] ?? '';
@@ -304,7 +304,7 @@ class AdminController {
             }
 
             if (empty($message)) {
-                if ($this->adminModel->updateBanner($id, $title, $imagePath, $link, $brand_name, $ambassador, $status)) {
+                if ($this->adminModel->updateBanner($id, $title, $imagePath, $link, $description, $position, $status)) {
                     header("Location: index.php?controller=admin&action=banners");
                     exit();
                 } else {

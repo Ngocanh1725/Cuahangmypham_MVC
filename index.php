@@ -9,10 +9,9 @@ require_once 'config/Database.php';
 $database = new Database();
 $db = $database->getConnection();
 
-// 3. Lấy tên Controller và Action từ URL (Mặc định là trang chủ danh sách sản phẩm)
-$controllerName = isset($_GET['controller']) ? $_GET['controller'] : 'product';
+// 3. Lấy tên Controller và Action từ URL (Mặc định là trang chủ - HomeController)
+$controllerName = isset($_GET['controller']) ? $_GET['controller'] : 'home';
 $actionName = isset($_GET['action']) ? $_GET['action'] : 'index';
-
 // ==============================================================
 // 4. DYNAMIC ROUTING (ĐỊNH TUYẾN ĐỘNG TỰ ĐỘNG)
 // ==============================================================

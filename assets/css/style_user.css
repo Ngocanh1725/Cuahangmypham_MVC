@@ -1,185 +1,288 @@
 /* ==========================================
-   1. IMPORT GOOGLE FONTS (POPPINS & PLAYFAIR)
+   1. IMPORT GOOGLE FONTS
+   - Poppins: Hiện đại, bo tròn, dễ đọc (Nội dung)
+   - Playfair Display: Sang trọng, tạp chí (Tiêu đề)
    ========================================== */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap');
 
 /* ==========================================
-   2. BIẾN MÀU SẮC (PASTEL THEME)
+   2. DESIGN SYSTEM VARIABLES (HỆ THỐNG BIẾN)
+   Phong cách Rhode: Pastel Nude/Pink + Bo tròn cực đại
    ========================================== */
 :root {
-    --brand-primary: #db2777;   /* Pink 600 - Đậm */
-    --brand-secondary: #fce7f3; /* Pink 100 - Nền nhạt */
-    --brand-dark: #be185d;      /* Pink 700 - Rất đậm */
+    /* Bảng màu Pastel & Nude */
+    --rhode-bg-main: #fdfbf9;      /* Màu nền trang: Trắng kem pha nude siêu nhạt */
+    --rhode-pink-light: #fce7eb;   /* Hồng phấn nhạt (Dùng cho nền card) */
+    --rhode-pink-accent: #d85c7b;  /* Hồng đậm ánh đỏ đô (Dùng cho nút, text nhấn) */
+    --rhode-pink-hover: #c44766;   /* Hồng đậm hơn khi hover */
     
-    --text-dark: #1f2937;
-    --text-gray: #6b7280;
-    --bg-body: #ffffff;
-    --bg-card: #f8fafc;
+    /* Màu text */
+    --text-main: #4a4040;          /* Xám nâu trầm (Đọc dịu mắt hơn đen) */
+    --text-light: #8c8181;         /* Xám nhạt cho mô tả phụ */
     
-    --font-main: 'Poppins', sans-serif;
-    --font-heading: 'Playfair Display', serif;
+    /* Bo góc (Border Radius) - Đặc trưng lớn nhất */
+    --radius-pill: 50px;           /* Nút hình viên thuốc */
+    --radius-card-lg: 32px;        /* Card to trên trang chủ */
+    --radius-card-md: 24px;        /* Card sản phẩm/ảnh */
+    --radius-card-sm: 16px;        /* Các tag nhỏ */
+    
+    /* Font chữ */
+    --font-sans: 'Poppins', sans-serif;
+    --font-serif: 'Playfair Display', serif;
+    
+    /* Hiệu ứng đổ bóng (Mềm, mờ, lan tỏa) */
+    --shadow-soft: 0 10px 30px rgba(216, 92, 123, 0.08);
+    --shadow-hover: 0 15px 40px rgba(216, 92, 123, 0.15);
 }
 
 /* ==========================================
-   3. STYLES CƠ BẢN
+   3. RESET & BASE STYLES
    ========================================== */
 body {
-    font-family: var(--font-main);
-    color: var(--text-dark);
-    background-color: var(--bg-body);
+    font-family: var(--font-sans);
+    color: var(--text-main);
+    background-color: var(--rhode-bg-main);
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
 }
 
-h1, h2, h3, h4, h5, h6 { font-weight: 600; color: var(--text-dark); }
-a { text-decoration: none; transition: all 0.3s ease; }
-.shadow-sm { box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important; }
+/* Các tiêu đề mang phong cách tạp chí */
+h1, h2, h3, h4, h5, h6, .font-serif {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    color: var(--rhode-pink-accent);
+}
+
+a {
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
 
 /* ==========================================
-   4. TOPBAR & NAVBAR (HEADER)
+   4. RHODE UTILITY CLASSES (CLASS DÙNG CHUNG)
    ========================================== */
-.topbar { background-color: var(--brand-secondary); color: var(--brand-dark); font-size: 0.85rem; padding: 8px 0; font-weight: 500; }
-.topbar a { color: var(--brand-dark); }
-.topbar a:hover { opacity: 0.7; }
 
-.main-header { background-color: white; box-shadow: 0 2px 15px rgba(0,0,0,0.04); padding: 15px 0; }
-.brand-logo { font-size: 2.2rem; font-weight: 700; color: var(--brand-dark) !important; letter-spacing: -1px; font-family: var(--font-heading); }
+/* Nút bấm viên thuốc (Pill Button) */
+.rhode-btn-primary {
+    background-color: var(--rhode-pink-accent);
+    color: #ffffff !important;
+    border-radius: var(--radius-pill);
+    padding: 12px 32px;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    border: none;
+    display: inline-block;
+    box-shadow: 0 4px 15px rgba(216, 92, 123, 0.2);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    text-align: center;
+    cursor: pointer;
+}
 
-.nav-menu a { color: var(--text-dark); font-weight: 500; padding: 8px 18px; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; }
-.nav-menu a:hover { color: var(--brand-primary); }
+.rhode-btn-primary:hover {
+    background-color: var(--rhode-pink-hover);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+}
 
-.header-icons a { color: var(--text-dark); font-size: 1.25rem; margin-left: 22px; position: relative;}
-.header-icons a:hover { color: var(--brand-primary); transform: translateY(-2px); }
-.cart-badge { position: absolute; top: -6px; right: -10px; background-color: var(--brand-primary); color: white; font-size: 0.7rem; font-weight: 600; padding: 2px 6px; border-radius: 50%; }
+/* Nút viên thuốc dạng viền (Outline) */
+.rhode-btn-outline {
+    background-color: transparent;
+    color: var(--rhode-pink-accent) !important;
+    border-radius: var(--radius-pill);
+    padding: 10px 30px;
+    font-weight: 500;
+    border: 2px solid var(--rhode-pink-accent);
+    transition: all 0.3s ease;
+    text-align: center;
+    cursor: pointer;
+}
+
+.rhode-btn-outline:hover {
+    background-color: var(--rhode-pink-accent);
+    color: #ffffff !important;
+}
+
+/* Thẻ Card dùng cho Bento Box (Bo tròn mạnh) */
+.rhode-bento-card {
+    background-color: #ffffff;
+    border-radius: var(--radius-card-lg);
+    box-shadow: var(--shadow-soft);
+    overflow: hidden;
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+    border: none;
+}
+
+.rhode-bento-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-hover);
+}
+
+/* Màu nền phụ pastel cho các Box đan xen */
+.bg-pastel-pink { background-color: var(--rhode-pink-light); }
+.bg-pastel-white { background-color: #ffffff; }
+
+/* Tag nhãn (Badge) */
+.rhode-badge {
+    background-color: var(--rhode-pink-accent);
+    color: white;
+    padding: 6px 16px;
+    border-radius: var(--radius-pill);
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: inline-block;
+}
+
+/* Hình ảnh bo tròn */
+.img-rounded {
+    border-radius: var(--radius-card-md);
+    object-fit: cover;
+    width: 100%;
+}
 
 /* ==========================================
-   5. HERO BANNER MỚI
+   5. HEADER & FLOATING NAVBAR
    ========================================== */
-.hero-section-wrapper { margin-bottom: 50px; }
-.hero-swiper { width: 100%; padding-bottom: 30px; }
-.hero-swiper .swiper-slide { 
-    height: 70vh; min-height: 500px; max-height: 650px;
-    background-color: var(--brand-secondary); 
-    position: relative; border-radius: 0 0 40px 40px; overflow: hidden;
-}
-.hero-swiper img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
-.banner-overlay-text { 
-    position: absolute; top: 50%; left: 8%; transform: translateY(-50%); 
-    max-width: 500px; background: rgba(255, 255, 255, 0.9); 
-    padding: 50px; border-radius: 12px; backdrop-filter: blur(8px);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.05);
-}
-.banner-brand-title { font-family: var(--font-heading); font-size: 3.5rem; color: var(--brand-primary); margin-bottom: 20px; font-weight: 700; line-height: 1.1; }
-.banner-desc { font-size: 1.05rem; color: var(--text-gray); line-height: 1.6; margin-bottom: 30px; }
-.hero-swiper .swiper-button-next, .hero-swiper .swiper-button-prev { color: var(--brand-primary); background: white; width: 50px; height: 50px; border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-.hero-swiper .swiper-pagination-bullet-active { background: var(--brand-primary); }
 
-/* ==========================================
-   6. SHOP BY CATEGORIES SECTION
-   ========================================== */
-.shop-categories { margin-bottom: 60px; }
-.section-title-elegant { font-family: var(--font-heading); color: var(--brand-primary); font-size: 2.5rem; font-weight: 700; margin-bottom: 10px; }
-.category-card { display: block; text-align: center; }
-.cat-img-box { background-color: var(--bg-card); border-radius: 16px; padding: 30px; height: 220px; display: flex; align-items: center; justify-content: center; transition: all 0.4s ease; margin-bottom: 15px; }
-.cat-img-box img { max-width: 85%; max-height: 85%; object-fit: contain; mix-blend-mode: multiply; transition: transform 0.5s ease; }
-.category-card:hover .cat-img-box { background-color: white; box-shadow: 0 15px 35px rgba(122, 28, 28, 0.08); transform: translateY(-8px); }
-.category-card:hover .cat-img-box img { transform: scale(1.15); }
-.cat-name { color: var(--text-dark); font-size: 1.15rem; transition: color 0.3s; font-family: var(--font-heading); font-weight: 600;}
-.category-card:hover .cat-name { color: var(--brand-primary); }
-
-/* ==========================================
-   7. OUR BESTSELLERS SECTION
-   ========================================== */
-.bestsellers-section { margin-bottom: 60px; }
-.bestseller-card { background: transparent; transition: transform 0.3s ease; }
-.bestseller-img-box {
-    position: relative; border-radius: 16px; padding: 20px; height: 260px;
-    display: flex; align-items: center; justify-content: center;
-    margin-bottom: 15px; overflow: hidden; transition: all 0.3s ease;
+/* Dải thông báo trên cùng (Announcement Bar) */
+.rhode-announcement-bar {
+    background-color: var(--rhode-pink-accent);
+    color: #fff;
+    text-align: center;
+    padding: 8px 0;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
 }
-.bestseller-img-box img { max-width: 80%; max-height: 80%; object-fit: contain; transition: transform 0.5s ease; mix-blend-mode: multiply; }
-.bestseller-card:hover .bestseller-img-box img { transform: scale(1.1); }
 
-/* Nút Wishlist (Trái tim) */
-.wishlist-btn {
-    position: absolute; top: 15px; right: 15px;
-    background: white; border: none; width: 35px; height: 35px;
-    border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    color: var(--text-gray); box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    transition: all 0.3s ease; z-index: 2;
+/* Vùng chứa thanh điều hướng lơ lửng */
+.rhode-header-wrapper {
+    position: sticky;
+    top: 20px;
+    z-index: 1000;
+    padding: 0 20px;
+    transition: all 0.3s ease;
 }
-.wishlist-btn:hover { color: var(--brand-primary); transform: scale(1.1); }
 
-/* Nút Add to Cart trượt lên */
-.cart-btn-circle {
-    position: absolute; bottom: -50px; right: 15px; /* Ẩn mặc định */
-    background: var(--brand-dark); color: white; border: none;
-    width: 42px; height: 42px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 4px 10px rgba(190, 24, 93, 0.3);
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    z-index: 2; opacity: 0; font-size: 1.1rem;
+/* Thanh điều hướng chính (Pill shape + Glassmorphism) */
+.rhode-navbar {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: var(--radius-pill);
+    padding: 10px 30px;
+    box-shadow: var(--shadow-soft);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    border: 1px solid rgba(255,255,255,0.5);
 }
-.bestseller-card:hover .cart-btn-circle { bottom: 15px; opacity: 1; }
-.cart-btn-circle:hover { background: var(--brand-primary); transform: scale(1.1); color: white;}
 
-.product-brand-name { font-size: 0.75rem; color: var(--text-gray); letter-spacing: 1px; margin-bottom: 5px; font-weight: 600; }
-.product-title-link {
-    font-family: var(--font-heading); font-size: 1.1rem; font-weight: 600; color: var(--text-dark);
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; transition: color 0.3s;
+/* Logo */
+.rhode-logo {
+    font-family: var(--font-serif);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--rhode-pink-accent);
+    text-decoration: none;
+    letter-spacing: -1px;
+    margin-right: 30px;
 }
-.product-title-link:hover { color: var(--brand-primary); }
 
-/* ==========================================
-   8. TRANG SHOP - SIDEBAR BỘ LỌC
-   ========================================== */
-.filter-sidebar { background: white; padding: 25px; border-radius: 12px; border: 1px solid #f0f0f0; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
-.filter-group { border-bottom: 1px solid #e5e7eb; padding-bottom: 20px; margin-bottom: 20px; }
-.filter-group:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-.filter-title { font-family: var(--font-heading); font-size: 1.15rem; color: var(--brand-primary); cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-weight: 600;}
-.filter-title::after { content: '\f106'; font-family: 'Font Awesome 5 Free'; font-weight: 900; transition: transform 0.3s ease; font-size: 0.9rem; color: #9ca3af; }
-.filter-title.collapsed::after { transform: rotate(180deg); }
-.filter-search-box { position: relative; margin-bottom: 15px; }
-.filter-search-box input { width: 100%; padding: 10px 10px 10px 35px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 0.85rem; outline: none; background: #f9fafb;}
-.filter-search-box i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 0.85rem; }
-.filter-item { margin-bottom: 12px; font-size: 0.9rem; color: #4b5563; }
-.filter-item input[type="checkbox"] { margin-right: 10px; accent-color: var(--brand-primary); cursor: pointer;}
-.btn-view-more { color: #6b7280; background: none; border: none; padding: 0; font-size: 0.85rem; font-weight: 500; text-decoration: underline; margin-top: 5px;}
-
-/* ==========================================
-   9. LƯỚI SẢN PHẨM (TRANG SHOP)
-   ========================================== */
-.product-card { width: 100%; position: relative; }
-.product-img-container {
-    height: 280px; background-color: var(--bg-card); border-radius: 12px;
-    display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border: 1px solid #f0f0f0;
+.rhode-logo:hover {
+    color: var(--rhode-pink-hover);
 }
-.product-img-container img { max-height: 85%; max-width: 85%; object-fit: contain; transition: transform 0.6s ease; }
-.product-card:hover .product-img-container img { transform: scale(1.08); }
 
-.quick-view-overlay {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.4);
-    display: flex; align-items: center; justify-content: center; opacity: 0; transition: all 0.3s ease; backdrop-filter: blur(2px);
+/* Link Menu */
+.rhode-nav-menu {
+    display: flex;
+    gap: 25px;
+    align-items: center;
 }
-.product-card:hover .quick-view-overlay { opacity: 1; }
-.btn-quick-view {
-    background: white !important; color: var(--brand-primary) !important; border: 1px solid var(--brand-primary) !important;
-    padding: 10px 25px; border-radius: 30px; font-weight: 600; font-size: 0.8rem; text-transform: uppercase;
-    transform: translateY(20px); transition: all 0.3s;
-}
-.product-card:hover .btn-quick-view { transform: translateY(0); }
-.btn-quick-view:hover { background: var(--brand-primary) !important; color: white !important; }
 
-/* ==========================================
-   10. FOOTER
-   ========================================== */
-.main-footer { background-color: var(--bg-card); padding: 70px 0 30px; border-top: 1px solid #f0f0f0; margin-top: 60px; }
-.footer-title { font-weight: 600; margin-bottom: 25px; font-size: 1.1rem; color: var(--text-dark); }
-.footer-links { list-style: none; padding: 0; }
-.footer-links li { margin-bottom: 12px; }
-.footer-links a { color: var(--text-gray); font-size: 0.95rem; }
-.footer-links a:hover { color: var(--brand-primary); padding-left: 5px; }
-.social-icons a { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; background: white; border: 1px solid #e5e7eb; color: var(--brand-dark); border-radius: 50%; margin-right: 10px; }
-.social-icons a:hover { background: var(--brand-primary); color: white; border-color: var(--brand-primary); transform: translateY(-3px); }
-.newsletter-form .form-control { border-radius: 30px 0 0 30px; }
-.newsletter-form .btn { border-radius: 0 30px 30px 0; background-color: var(--brand-dark); color: white; }
-```
+.rhode-nav-menu a {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-main);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative;
+    text-decoration: none;
+}
+
+.rhode-nav-menu a::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--rhode-pink-accent);
+    transition: width 0.3s ease;
+    border-radius: 2px;
+}
+
+.rhode-nav-menu a:hover {
+    color: var(--rhode-pink-accent);
+}
+
+.rhode-nav-menu a:hover::after {
+    width: 100%;
+}
+
+/* Nút icon tròn (Tìm kiếm, User, Giỏ hàng) */
+.rhode-nav-icons {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.rhode-icon-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--text-main);
+    background: transparent;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    position: relative;
+    text-decoration: none;
+}
+
+.rhode-icon-btn:hover {
+    background: var(--rhode-pink-light);
+    color: var(--rhode-pink-accent);
+}
+
+/* Chấm số lượng giỏ hàng */
+.rhode-cart-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background-color: var(--rhode-pink-accent);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 2px solid #fff;
+}
+
+/* Reponsive cho màn hình nhỏ */
+@media (max-width: 991px) {
+    .rhode-nav-menu { display: none; }
+    .rhode-navbar { padding: 10px 20px; }
+}
