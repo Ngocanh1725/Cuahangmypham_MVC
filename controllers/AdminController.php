@@ -1,5 +1,6 @@
 <?php
 require_once 'models/AdminModel.php';
+require_once 'helpers/UploadHelper.php';
 
 class AdminController {
     private $adminModel;
@@ -18,75 +19,7 @@ class AdminController {
         }
     }
 
-    // ---------------------------------------------------------
-    // Hàm xử lý Upload Ảnh
-    // ---------------------------------------------------------
-    private function handleImageUpload($file, $folder = 'others') {
-        if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
-            return false;
-        }
-
-        $maxSize = 5 * 1024 * 1024; // 5MB
-        if ($file['size'] > $maxSize) {
-            return ['error' => 'Dung lượng ảnh quá lớn. Tối đa cho phép là 5MB.'];
-        }
-
-        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-        $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        if (!in_array($fileExtension, $allowedExtensions)) {
-            return ['error' => 'Chỉ chấp nhận các định dạng ảnh: JPG, JPEG, PNG, GIF, WEBP.'];
-        }
-
-        $finfo = new finfo(FILEINFO_MIME_TYPE);
-        $mimeType = $finfo->file($file['tmp_name']);
-        $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        if (!in_array($mimeType, $allowedMimeTypes)) {
-            return ['error' => 'Định dạng file không hợp lệ! Phát hiện nghi ngờ giả mạo.'];
-        }
-
-        $newFileName = md5(uniqid(rand(), true)) . '.' . $fileExtension;
-        $targetDir = "assets/images/" . $folder . "/";
-        if (!file_exists($targetDir)) {
-            mkdir($targetDir, 0777, true);
-        }
-        
-        $targetFile = $targetDir . $newFileName;
-
-        if (move_uploaded_file($file['tmp_name'], $targetFile)) {
-            return ['path' => $targetFile];
-        } else {
-            return ['error' => 'Đã xảy ra lỗi đường truyền, không thể lưu file.'];
-        }
-    }
-
-    private function handleBase64ImageUpload($base64String, $folder = 'others') {
-        if (empty($base64String)) return false;
-
-        $parts = explode(',', $base64String);
-        if (count($parts) !== 2) return ['error' => 'Dữ liệu ảnh không hợp lệ.'];
-        
-        $imgData = base64_decode($parts[1]);
-        if ($imgData === false) return ['error' => 'Giải mã ảnh thất bại.'];
-
-        $finfo = new finfo(FILEINFO_MIME_TYPE);
-        $mime_type = $finfo->buffer($imgData);
-        
-        $extension = 'jpg'; 
-        if ($mime_type === 'image/png') $extension = 'png';
-        elseif ($mime_type === 'image/webp') $extension = 'webp';
-
-        $newFileName = md5(uniqid(rand(), true)) . '_cropped.' . $extension;
-        $targetDir = "assets/images/" . $folder . "/";
-        if (!file_exists($targetDir)) mkdir($targetDir, 0777, true);
-        
-        $targetFile = $targetDir . $newFileName;
-
-        if (file_put_contents($targetFile, $imgData)) {
-            return ['path' => $targetFile];
-        } else {
-            return ['error' => 'Không thể lưu ảnh đã cắt.'];
-        }
-    }
+    // Upload ảnh giờ được xử lý bởi helpers/UploadHelper.php
 
     // ---------------------------------------------------------
     // DASHBOARD
@@ -138,11 +71,11 @@ class AdminController {
             $imagePath = "https://via.placeholder.com/300x300?text=No+Image";
 
             if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-                $uploadResult = $this->handleImageUpload($_FILES['image'], 'products');
-                if (isset($uploadResult['error'])) {
-                    $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
-                } elseif (isset($uploadResult['path'])) {
+                $uploadResult = UploadHelper::uploadFile($_FILES['image'], 'products');
+                if ($uploadResult['success']) {
                     $imagePath = $uploadResult['path'];
+                } else {
+                    $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
                 }
             }
 
@@ -178,14 +111,12 @@ class AdminController {
             $imagePath = $_POST['current_image'] ?? ''; 
 
             if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-                $uploadResult = $this->handleImageUpload($_FILES['image'], 'products');
-                if (isset($uploadResult['error'])) {
+                $uploadResult = UploadHelper::uploadFile($_FILES['image'], 'products');
+                if ($uploadResult['success']) {
+                    UploadHelper::deleteFile($_POST['current_image'] ?? '');
+                    $imagePath = $uploadResult['path'];
+                } else {
                     $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
-                } elseif (isset($uploadResult['path'])) {
-                    $imagePath = $uploadResult['path']; 
-                    if (!empty($_POST['current_image']) && file_exists($_POST['current_image']) && strpos($_POST['current_image'], 'http') === false) {
-                        unlink($_POST['current_image']);
-                    }
                 }
             }
 
@@ -208,8 +139,8 @@ class AdminController {
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         if ($id > 0) {
             $product = $this->adminModel->getProductById($id);
-            if ($product && !empty($product['image']) && file_exists($product['image']) && strpos($product['image'], 'http') === false) {
-                unlink($product['image']);
+            if ($product) {
+                UploadHelper::deleteFile($product['image'] ?? '');
             }
             $this->adminModel->deleteProduct($id);
         }
@@ -242,18 +173,18 @@ class AdminController {
             $imagePath = "";
 
             if (!empty($cropped_image)) {
-                $uploadResult = $this->handleBase64ImageUpload($cropped_image, 'banners');
-                if (isset($uploadResult['error'])) {
-                    $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
-                } elseif (isset($uploadResult['path'])) {
+                $uploadResult = UploadHelper::uploadBase64($cropped_image, 'banners');
+                if ($uploadResult['success']) {
                     $imagePath = $uploadResult['path'];
+                } else {
+                    $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
                 }
             } elseif (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-                $uploadResult = $this->handleImageUpload($_FILES['image'], 'banners');
-                if (isset($uploadResult['error'])) {
-                    $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
-                } elseif (isset($uploadResult['path'])) {
+                $uploadResult = UploadHelper::uploadFile($_FILES['image'], 'banners');
+                if ($uploadResult['success']) {
                     $imagePath = $uploadResult['path'];
+                } else {
+                    $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
                 }
             } else {
                 $message = "<div class='alert alert-danger'>Vui lòng tải lên hình ảnh cho Banner!</div>";
@@ -291,24 +222,20 @@ class AdminController {
             $cropped_image = $_POST['cropped_image'] ?? '';
 
             if (!empty($cropped_image)) {
-                $uploadResult = $this->handleBase64ImageUpload($cropped_image, 'banners');
-                if (isset($uploadResult['error'])) {
-                    $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
-                } elseif (isset($uploadResult['path'])) {
+                $uploadResult = UploadHelper::uploadBase64($cropped_image, 'banners');
+                if ($uploadResult['success']) {
+                    UploadHelper::deleteFile($_POST['current_image'] ?? '');
                     $imagePath = $uploadResult['path'];
-                    if (!empty($_POST['current_image']) && file_exists($_POST['current_image']) && strpos($_POST['current_image'], 'http') === false) {
-                        unlink($_POST['current_image']);
-                    }
+                } else {
+                    $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
                 }
             } elseif (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-                $uploadResult = $this->handleImageUpload($_FILES['image'], 'banners');
-                if (isset($uploadResult['error'])) {
-                    $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
-                } elseif (isset($uploadResult['path'])) {
+                $uploadResult = UploadHelper::uploadFile($_FILES['image'], 'banners');
+                if ($uploadResult['success']) {
+                    UploadHelper::deleteFile($_POST['current_image'] ?? '');
                     $imagePath = $uploadResult['path'];
-                    if (!empty($_POST['current_image']) && file_exists($_POST['current_image']) && strpos($_POST['current_image'], 'http') === false) {
-                        unlink($_POST['current_image']);
-                    }
+                } else {
+                    $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
                 }
             }
 
@@ -330,8 +257,8 @@ class AdminController {
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         if ($id > 0) {
             $banner = $this->adminModel->getBannerById($id);
-            if ($banner && !empty($banner['image']) && file_exists($banner['image']) && strpos($banner['image'], 'http') === false) {
-                unlink($banner['image']);
+            if ($banner) {
+                UploadHelper::deleteFile($banner['image'] ?? '');
             }
             $this->adminModel->deleteBanner($id);
         }
@@ -360,15 +287,15 @@ class AdminController {
             $bannerPath = "https://via.placeholder.com/1200x300?text=No+Banner";
 
             if (isset($_FILES['logo']) && $_FILES['logo']['error'] == 0) {
-                $uploadLogo = $this->handleImageUpload($_FILES['logo'], 'brands');
-                if (isset($uploadLogo['error'])) $message .= "<div class='alert alert-danger'>Logo: " . $uploadLogo['error'] . "</div>";
-                elseif (isset($uploadLogo['path'])) $logoPath = $uploadLogo['path'];
+                $uploadLogo = UploadHelper::uploadFile($_FILES['logo'], 'brands');
+                if ($uploadLogo['success']) $logoPath = $uploadLogo['path'];
+                else $message .= "<div class='alert alert-danger'>Logo: " . $uploadLogo['error'] . "</div>";
             }
 
             if (isset($_FILES['banner']) && $_FILES['banner']['error'] == 0) {
-                $uploadBanner = $this->handleImageUpload($_FILES['banner'], 'brands');
-                if (isset($uploadBanner['error'])) $message .= "<div class='alert alert-danger'>Banner: " . $uploadBanner['error'] . "</div>";
-                elseif (isset($uploadBanner['path'])) $bannerPath = $uploadBanner['path'];
+                $uploadBanner = UploadHelper::uploadFile($_FILES['banner'], 'brands');
+                if ($uploadBanner['success']) $bannerPath = $uploadBanner['path'];
+                else $message .= "<div class='alert alert-danger'>Banner: " . $uploadBanner['error'] . "</div>";
             }
 
             if (empty($message)) {
@@ -399,22 +326,18 @@ class AdminController {
             $bannerPath = $_POST['current_banner'] ?? ''; 
 
             if (isset($_FILES['logo']) && $_FILES['logo']['error'] == 0) {
-                $uploadLogo = $this->handleImageUpload($_FILES['logo'], 'brands');
-                if (!isset($uploadLogo['error']) && isset($uploadLogo['path'])) {
-                    $logoPath = $uploadLogo['path']; 
-                    if (!empty($_POST['current_logo']) && file_exists($_POST['current_logo']) && strpos($_POST['current_logo'], 'http') === false) {
-                        unlink($_POST['current_logo']);
-                    }
+                $uploadLogo = UploadHelper::uploadFile($_FILES['logo'], 'brands');
+                if ($uploadLogo['success']) {
+                    UploadHelper::deleteFile($_POST['current_logo'] ?? '');
+                    $logoPath = $uploadLogo['path'];
                 }
             }
 
             if (isset($_FILES['banner']) && $_FILES['banner']['error'] == 0) {
-                $uploadBanner = $this->handleImageUpload($_FILES['banner'], 'brands');
-                if (!isset($uploadBanner['error']) && isset($uploadBanner['path'])) {
-                    $bannerPath = $uploadBanner['path']; 
-                    if (!empty($_POST['current_banner']) && file_exists($_POST['current_banner']) && strpos($_POST['current_banner'], 'http') === false) {
-                        unlink($_POST['current_banner']);
-                    }
+                $uploadBanner = UploadHelper::uploadFile($_FILES['banner'], 'brands');
+                if ($uploadBanner['success']) {
+                    UploadHelper::deleteFile($_POST['current_banner'] ?? '');
+                    $bannerPath = $uploadBanner['path'];
                 }
             }
 
@@ -437,8 +360,8 @@ class AdminController {
         if ($id > 0) {
             $brand = $this->adminModel->getBrandById($id);
             if ($brand) {
-                if (!empty($brand['logo']) && file_exists($brand['logo']) && strpos($brand['logo'], 'http') === false) unlink($brand['logo']);
-                if (!empty($brand['banner']) && file_exists($brand['banner']) && strpos($brand['banner'], 'http') === false) unlink($brand['banner']);
+                UploadHelper::deleteFile($brand['logo'] ?? '');
+                UploadHelper::deleteFile($brand['banner'] ?? '');
             }
             $this->adminModel->deleteBrand($id);
         }
