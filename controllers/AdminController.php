@@ -12,10 +12,35 @@ class AdminController {
     // ---------------------------------------------------------
     // Kiểm tra quyền (Chỉ cho phép Role 1: Admin, Role 2: Staff)
     // ---------------------------------------------------------
-    private function checkAuth() {
+    private function checkAuth($module = null) {
         if (!isset($_SESSION['user_id']) || ($_SESSION['role'] != 1 && $_SESSION['role'] != 2)) {
             header("Location: index.php?controller=user&action=login");
             exit();
+        }
+
+        if ($_SESSION['role'] == 2) {
+            // Luôn lấy quyền mới nhất từ DB
+            $db_conn = new mysqli('localhost', 'root', '', 'cosmetics_db');
+            if (!$db_conn->connect_error) {
+                $stmt = $db_conn->prepare("SELECT permissions FROM users WHERE id = ?");
+                $stmt->bind_param("i", $_SESSION['user_id']);
+                $stmt->execute();
+                $res = $stmt->get_result();
+                if ($res && $res->num_rows > 0) {
+                    $row = $res->fetch_assoc();
+                    $_SESSION['permissions'] = $row['permissions'];
+                }
+                $stmt->close();
+                $db_conn->close();
+            }
+
+            if ($module != null) {
+                $userPerms = isset($_SESSION['permissions']) ? explode(',', $_SESSION['permissions']) : [];
+                if (!in_array($module, $userPerms)) {
+                    echo "<script>alert('Bạn không có quyền truy cập chức năng này!'); window.location.href='index.php?controller=admin&action=index';</script>";
+                    exit();
+                }
+            }
         }
     }
 
@@ -45,21 +70,19 @@ class AdminController {
     // ---------------------------------------------------------
     // QUẢN LÝ SẢN PHẨM
     // ---------------------------------------------------------
-    public function products() {
-        $this->checkAuth();
+    public function products() { $this->checkAuth('products');
         $search = $_GET['search'] ?? '';
         $category_id = $_GET['category'] ?? '';
         $brand_id = $_GET['brand_id'] ?? '';
 
         $products = $this->adminModel->getAllProducts($search, $category_id, $brand_id);
-        $brandsList = $this->adminModel->getAllBrands();
+        $brandsList = (require_once 'models/BrandModel.php') ? (new BrandModel($this->adminModel->getConn()))->getAllBrands() : [];
         $categoriesList = $this->adminModel->getAllCategories();
         $newOrders = $this->adminModel->getNewOrdersCount();
-        require_once 'views/admin/products.php';
+        require_once 'views/admin/products/index.php';
     }
 
-    public function addProduct() {
-        $this->checkAuth();
+    public function addProduct() { $this->checkAuth('products');
         $message = "";
 
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -90,13 +113,12 @@ class AdminController {
             }
         }
         $newOrders = $this->adminModel->getNewOrdersCount();
-        $brandsList = $this->adminModel->getAllBrands();
+        $brandsList = (require_once 'models/BrandModel.php') ? (new BrandModel($this->adminModel->getConn()))->getAllBrands() : [];
         $categoriesList = $this->adminModel->getAllCategories();
-        require_once 'views/admin/add_product.php';
+        require_once 'views/admin/products/add.php';
     }
 
-    public function editProduct() {
-        $this->checkAuth();
+    public function editProduct() { $this->checkAuth('products');
         $message = "";
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         
@@ -132,13 +154,12 @@ class AdminController {
             }
         }
         $newOrders = $this->adminModel->getNewOrdersCount();
-        $brandsList = $this->adminModel->getAllBrands();
+        $brandsList = (require_once 'models/BrandModel.php') ? (new BrandModel($this->adminModel->getConn()))->getAllBrands() : [];
         $categoriesList = $this->adminModel->getAllCategories();
-        require_once 'views/admin/edit_product.php';
+        require_once 'views/admin/products/edit.php';
     }
 
-    public function deleteProduct() {
-        $this->checkAuth();
+    public function deleteProduct() { $this->checkAuth('products');
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         if ($id > 0) {
             $product = $this->adminModel->getProductById($id);
@@ -154,15 +175,13 @@ class AdminController {
     // ---------------------------------------------------------
     // QUẢN LÝ BANNER QUẢNG CÁO
     // ---------------------------------------------------------
-    public function banners() {
-        $this->checkAuth();
-        $banners = $this->adminModel->getAllBanners();
+    public function banners() { $this->checkAuth('banners');
+        $banners = (require_once 'models/BannerModel.php') ? (new BannerModel($this->adminModel->getConn()))->getAllBanners() : [];
         $newOrders = $this->adminModel->getNewOrdersCount();
-        require_once 'views/admin/banners.php';
+        require_once 'views/admin/banners/index.php';
     }
 
-    public function addBanner() {
-        $this->checkAuth();
+    public function addBanner() { $this->checkAuth('banners');
         $message = "";
 
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -194,7 +213,7 @@ class AdminController {
             }
 
             if (empty($message)) {
-                if ($this->adminModel->addBanner($title, $imagePath, $link, $description, $position, $status)) {
+                if ((require_once 'models/BannerModel.php') ? (new BannerModel($this->adminModel->getConn()))->addBanner($title, $imagePath, $link, $description, $position, $status) : false) {
                     header("Location: index.php?controller=admin&action=banners");
                     exit();
                 } else {
@@ -203,15 +222,14 @@ class AdminController {
             }
         }
         $newOrders = $this->adminModel->getNewOrdersCount();
-        require_once 'views/admin/add_banner.php';
+        require_once 'views/admin/banners/add.php';
     }
 
-    public function editBanner() {
-        $this->checkAuth();
+    public function editBanner() { $this->checkAuth('banners');
         $message = "";
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         
-        $banner = $this->adminModel->getBannerById($id);
+        $banner = (require_once 'models/BannerModel.php') ? (new BannerModel($this->adminModel->getConn()))->getBannerById($id) : null;
         if (!$banner) die("Banner không tồn tại!");
 
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -243,7 +261,7 @@ class AdminController {
             }
 
             if (empty($message)) {
-                if ($this->adminModel->updateBanner($id, $title, $imagePath, $link, $description, $position, $status)) {
+                if ((require_once 'models/BannerModel.php') ? (new BannerModel($this->adminModel->getConn()))->updateBanner($id, $title, $imagePath, $link, $description, $position, $status) : false) {
                     header("Location: index.php?controller=admin&action=banners");
                     exit();
                 } else {
@@ -252,18 +270,17 @@ class AdminController {
             }
         }
         $newOrders = $this->adminModel->getNewOrdersCount();
-        require_once 'views/admin/edit_banner.php';
+        require_once 'views/admin/banners/edit.php';
     }
 
-    public function deleteBanner() {
-        $this->checkAuth();
+    public function deleteBanner() { $this->checkAuth('banners');
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         if ($id > 0) {
-            $banner = $this->adminModel->getBannerById($id);
+            $banner = (require_once 'models/BannerModel.php') ? (new BannerModel($this->adminModel->getConn()))->getBannerById($id) : null;
             if ($banner) {
                 UploadHelper::deleteFile($banner['image'] ?? '');
             }
-            $this->adminModel->deleteBanner($id);
+            (require_once 'models/BannerModel.php') ? (new BannerModel($this->adminModel->getConn()))->deleteBanner($id) : false;
         }
         header("Location: index.php?controller=admin&action=banners");
         exit();
@@ -272,15 +289,13 @@ class AdminController {
     // ---------------------------------------------------------
     // QUẢN LÝ THƯƠNG HIỆU
     // ---------------------------------------------------------
-    public function brands() {
-        $this->checkAuth();
-        $brands = $this->adminModel->getAllBrands();
+    public function brands() { $this->checkAuth('brands');
+        $brands = (require_once 'models/BrandModel.php') ? (new BrandModel($this->adminModel->getConn()))->getAllBrands() : [];
         $newOrders = $this->adminModel->getNewOrdersCount();
-        require_once 'views/admin/brands.php';
+        require_once 'views/admin/brands/index.php';
     }
 
-    public function addBrand() {
-        $this->checkAuth();
+    public function addBrand() { $this->checkAuth('brands');
         $message = "";
 
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -302,7 +317,7 @@ class AdminController {
             }
 
             if (empty($message)) {
-                if ($this->adminModel->addBrand($name, $logoPath, $bannerPath, $description)) {
+                if ((require_once 'models/BrandModel.php') ? (new BrandModel($this->adminModel->getConn()))->addBrand($name, $logoPath, $bannerPath, $description) : false) {
                     header("Location: index.php?controller=admin&action=brands");
                     exit();
                 } else {
@@ -311,15 +326,14 @@ class AdminController {
             }
         }
         $newOrders = $this->adminModel->getNewOrdersCount();
-        require_once 'views/admin/add_brand.php';
+        require_once 'views/admin/brands/add.php';
     }
 
-    public function editBrand() {
-        $this->checkAuth();
+    public function editBrand() { $this->checkAuth('brands');
         $message = "";
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         
-        $brand = $this->adminModel->getBrandById($id);
+        $brand = (require_once 'models/BrandModel.php') ? (new BrandModel($this->adminModel->getConn()))->getBrandById($id) : null;
         if (!$brand) die("Thương hiệu không tồn tại!");
 
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -345,7 +359,7 @@ class AdminController {
             }
 
             if (empty($message)) {
-                if ($this->adminModel->updateBrand($id, $name, $logoPath, $bannerPath, $description)) {
+                if ((require_once 'models/BrandModel.php') ? (new BrandModel($this->adminModel->getConn()))->updateBrand($id, $name, $logoPath, $bannerPath, $description) : false) {
                     header("Location: index.php?controller=admin&action=brands");
                     exit();
                 } else {
@@ -354,19 +368,18 @@ class AdminController {
             }
         }
         $newOrders = $this->adminModel->getNewOrdersCount();
-        require_once 'views/admin/edit_brand.php';
+        require_once 'views/admin/brands/edit.php';
     }
 
-    public function deleteBrand() {
-        $this->checkAuth();
+    public function deleteBrand() { $this->checkAuth('brands');
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         if ($id > 0) {
-            $brand = $this->adminModel->getBrandById($id);
+            $brand = (require_once 'models/BrandModel.php') ? (new BrandModel($this->adminModel->getConn()))->getBrandById($id) : null;
             if ($brand) {
                 UploadHelper::deleteFile($brand['logo'] ?? '');
                 UploadHelper::deleteFile($brand['banner'] ?? '');
             }
-            $this->adminModel->deleteBrand($id);
+            (require_once 'models/BrandModel.php') ? (new BrandModel($this->adminModel->getConn()))->deleteBrand($id) : false;
         }
         header("Location: index.php?controller=admin&action=brands");
         exit();
@@ -375,8 +388,7 @@ class AdminController {
     // ---------------------------------------------------------
     // QUẢN LÝ KHUYẾN MÃI
     // ---------------------------------------------------------
-    public function promotions() {
-        $this->checkAuth();
+    public function promotions() { $this->checkAuth('products');
         $products = $this->adminModel->getAllProducts();
         $newOrders = $this->adminModel->getNewOrdersCount();
         require_once 'views/admin/promotions.php';
@@ -399,16 +411,14 @@ class AdminController {
     // ---------------------------------------------------------
     // QUẢN LÝ ĐƠN HÀNG
     // ---------------------------------------------------------
-    public function orders() {
-        $this->checkAuth();
+    public function orders() { $this->checkAuth('orders');
         $orders = $this->adminModel->getAllOrders();
         $newOrders = $this->adminModel->getNewOrdersCount(); 
-        require_once 'views/admin/orders.php';
+        require_once 'views/admin/orders/index.php';
     }
 
     // Hiển thị chi tiết đơn hàng
-    public function orderDetail() {
-        $this->checkAuth();
+    public function orderDetail() { $this->checkAuth('orders');
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         if ($id > 0) {
             $order = $this->adminModel->getOrderById($id);
@@ -417,15 +427,14 @@ class AdminController {
             }
             $orderDetails = $this->adminModel->getOrderDetails($id);
             $newOrders = $this->adminModel->getNewOrdersCount();
-            require_once 'views/admin/order_detail.php';
+            require_once 'views/admin/orders/detail.php';
         } else {
             header("Location: index.php?controller=admin&action=orders");
             exit();
         }
     }
 
-    public function updateOrderStatus() {
-        $this->checkAuth();
+    public function updateOrderStatus() { $this->checkAuth('orders');
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         $status = isset($_GET['status']) ? $_GET['status'] : '';
         
@@ -446,17 +455,15 @@ class AdminController {
     // ---------------------------------------------------------
     // QUẢN LÝ TÀI KHOẢN (USER)
     // ---------------------------------------------------------
-    public function users() {
-        $this->checkAuth();
+    public function users() { $this->checkAuth('users');
         if ($_SESSION['role'] != 1) die("Chỉ có Admin cấp cao mới được truy cập quản lý người dùng!");
 
         $users = $this->adminModel->getAllUsers();
         $newOrders = $this->adminModel->getNewOrdersCount(); 
-        require_once 'views/admin/users.php';
+        require_once 'views/admin/users/index.php';
     }
 
-    public function addUser() {
-        $this->checkAuth();
+    public function addUser() { $this->checkAuth('users');
         if ($_SESSION['role'] != 1) die("Bạn không có quyền thực hiện chức năng này!");
 
         $message = "";
@@ -479,11 +486,10 @@ class AdminController {
             }
         }
         $newOrders = $this->adminModel->getNewOrdersCount(); 
-        require_once 'views/admin/add_user.php';
+        require_once 'views/admin/users/add.php';
     }
 
-    public function editUser() {
-        $this->checkAuth();
+    public function editUser() { $this->checkAuth('users');
         if ($_SESSION['role'] != 1) die("Bạn không có quyền thực hiện chức năng này!");
 
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -511,11 +517,10 @@ class AdminController {
             }
         }
         $newOrders = $this->adminModel->getNewOrdersCount(); 
-        require_once 'views/admin/edit_user.php';
+        require_once 'views/admin/users/edit.php';
     }
 
-    public function deleteUser() {
-        $this->checkAuth();
+    public function deleteUser() { $this->checkAuth('users');
         if ($_SESSION['role'] != 1) die("Bạn không có quyền thực hiện chức năng này!");
 
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -531,8 +536,7 @@ class AdminController {
     // ---------------------------------------------------------
     // CẤU HÌNH HỆ THỐNG
     // ---------------------------------------------------------
-    public function settings() {
-        $this->checkAuth();
+    public function settings() { $this->checkAuth('settings');
         if ($_SESSION['role'] != 1) die("Chỉ có Admin cấp cao mới được chỉnh sửa cấu hình hệ thống!");
 
         $message = "";
@@ -565,11 +569,184 @@ class AdminController {
     // ---------------------------------------------------------
     // QUẢN LÝ BÀI VIẾT - TẠP CHÍ
     // ---------------------------------------------------------
-    public function posts() {
-        $this->checkAuth();
-        $posts = $this->adminModel->getAllPosts();
+    public function posts() { $this->checkAuth('posts');
+        $posts = (require_once 'models/PostModel.php') ? (new PostModel($this->adminModel->getConn()))->getAllPosts() : [];
         $newOrders = $this->adminModel->getNewOrdersCount();
-        require_once 'views/admin/posts.php';
+        require_once 'views/admin/posts/index.php';
+    }
+
+    // ---------------------------------------------------------
+    // QUẢN LÝ MÃ GIẢM GIÁ
+    // ---------------------------------------------------------
+    public function coupons() {
+        $this->checkAuth('coupons');
+        require_once 'models/CouponModel.php';
+        $couponModel = new CouponModel($this->adminModel->getConn());
+        $coupons = $couponModel->getAllCoupons();
+        $newOrders = $this->adminModel->getNewOrdersCount();
+        require_once 'views/admin/coupons/index.php';
+    }
+
+    public function addCoupon() {
+        $this->checkAuth('coupons');
+        require_once 'models/CouponModel.php';
+        $couponModel = new CouponModel($this->adminModel->getConn());
+        $message = '';
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            if ($couponModel->addCoupon($_POST['code'], $_POST['type'], $_POST['discount_value'], $_POST['min_order_value'], $_POST['max_discount'], $_POST['usage_limit'], $_POST['start_date'], $_POST['end_date'], $_POST['is_active'], $_POST['description'])) {
+                header('Location: index.php?controller=admin&action=coupons');
+                exit();
+            } else {
+                $message = '<div class="alert alert-danger">Lỗi thêm mã giảm giá!</div>';
+            }
+        }
+        $newOrders = $this->adminModel->getNewOrdersCount();
+        require_once 'views/admin/coupons/add.php';
+    }
+
+    public function editCoupon() {
+        $this->checkAuth('coupons');
+        require_once 'models/CouponModel.php';
+        $couponModel = new CouponModel($this->adminModel->getConn());
+        $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+        $coupon = $couponModel->getCouponById($id);
+        $message = '';
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            if ($couponModel->updateCoupon($id, $_POST['code'], $_POST['type'], $_POST['discount_value'], $_POST['min_order_value'], $_POST['max_discount'], $_POST['usage_limit'], $_POST['start_date'], $_POST['end_date'], $_POST['is_active'], $_POST['description'])) {
+                header('Location: index.php?controller=admin&action=coupons');
+                exit();
+            } else {
+                $message = '<div class="alert alert-danger">Lỗi cập nhật mã giảm giá!</div>';
+            }
+        }
+        $newOrders = $this->adminModel->getNewOrdersCount();
+        require_once 'views/admin/coupons/edit.php';
+    }
+
+    public function deleteCoupon() {
+        $this->checkAuth('coupons');
+        require_once 'models/CouponModel.php';
+        $couponModel = new CouponModel($this->adminModel->getConn());
+        $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+        if ($id > 0) $couponModel->deleteCoupon($id);
+        header('Location: index.php?controller=admin&action=coupons');
+        exit();
+    }
+
+    // ---------------------------------------------------------
+    // QUẢN LÝ HẠNG THÀNH VIÊN
+    // ---------------------------------------------------------
+    public function tiers() {
+        $this->checkAuth('tiers');
+        require_once 'models/TierModel.php';
+        $tierModel = new TierModel($this->adminModel->getConn());
+        $tiers = $tierModel->getAllTiers();
+        $newOrders = $this->adminModel->getNewOrdersCount();
+        require_once 'views/admin/tiers/index.php';
+    }
+
+    public function addTier() {
+        $this->checkAuth('tiers');
+        require_once 'models/TierModel.php';
+        $tierModel = new TierModel($this->adminModel->getConn());
+        $message = '';
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            if ($tierModel->addTier($_POST['name'], $_POST['discount_percent'], $_POST['min_points'], $_POST['description'], $_POST['icon_class'])) {
+                header('Location: index.php?controller=admin&action=tiers');
+                exit();
+            } else {
+                $message = '<div class="alert alert-danger">Lỗi thêm hạng thành viên!</div>';
+            }
+        }
+        $newOrders = $this->adminModel->getNewOrdersCount();
+        require_once 'views/admin/tiers/add.php';
+    }
+
+    public function editTier() {
+        $this->checkAuth('tiers');
+        require_once 'models/TierModel.php';
+        $tierModel = new TierModel($this->adminModel->getConn());
+        $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+        $tier = $tierModel->getTierById($id);
+        $message = '';
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            if ($tierModel->updateTier($id, $_POST['name'], $_POST['discount_percent'], $_POST['min_points'], $_POST['description'], $_POST['icon_class'])) {
+                header('Location: index.php?controller=admin&action=tiers');
+                exit();
+            } else {
+                $message = '<div class="alert alert-danger">Lỗi cập nhật hạng thành viên!</div>';
+            }
+        }
+        $newOrders = $this->adminModel->getNewOrdersCount();
+        require_once 'views/admin/tiers/edit.php';
+    }
+
+    public function deleteTier() {
+        $this->checkAuth('tiers');
+        require_once 'models/TierModel.php';
+        $tierModel = new TierModel($this->adminModel->getConn());
+        $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+        if ($id > 0) $tierModel->deleteTier($id);
+        header('Location: index.php?controller=admin&action=tiers');
+        exit();
+    }
+
+    // ---------------------------------------------------------
+    // QUẢN LÝ CỬA HÀNG
+    // ---------------------------------------------------------
+    public function stores() {
+        $this->checkAuth('stores');
+        require_once 'models/StoreModel.php';
+        $storeModel = new StoreModel($this->adminModel->getConn());
+        $stores = $storeModel->getAllStores();
+        $newOrders = $this->adminModel->getNewOrdersCount();
+        require_once 'views/admin/stores/index.php';
+    }
+
+    public function addStore() {
+        $this->checkAuth('stores');
+        require_once 'models/StoreModel.php';
+        $storeModel = new StoreModel($this->adminModel->getConn());
+        $message = '';
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            if ($storeModel->addStore($_POST['name'], $_POST['address'], $_POST['phone'], $_POST['email'], $_POST['map_url'])) {
+                header('Location: index.php?controller=admin&action=stores');
+                exit();
+            } else {
+                $message = '<div class="alert alert-danger">Lỗi thêm cửa hàng!</div>';
+            }
+        }
+        $newOrders = $this->adminModel->getNewOrdersCount();
+        require_once 'views/admin/stores/add.php';
+    }
+
+    public function editStore() {
+        $this->checkAuth('stores');
+        require_once 'models/StoreModel.php';
+        $storeModel = new StoreModel($this->adminModel->getConn());
+        $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+        $store = $storeModel->getStoreById($id);
+        $message = '';
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            if ($storeModel->updateStore($id, $_POST['name'], $_POST['address'], $_POST['phone'], $_POST['email'], $_POST['map_url'])) {
+                header('Location: index.php?controller=admin&action=stores');
+                exit();
+            } else {
+                $message = '<div class="alert alert-danger">Lỗi cập nhật cửa hàng!</div>';
+            }
+        }
+        $newOrders = $this->adminModel->getNewOrdersCount();
+        require_once 'views/admin/stores/edit.php';
+    }
+
+    public function deleteStore() {
+        $this->checkAuth('stores');
+        require_once 'models/StoreModel.php';
+        $storeModel = new StoreModel($this->adminModel->getConn());
+        $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+        if ($id > 0) $storeModel->deleteStore($id);
+        header('Location: index.php?controller=admin&action=stores');
+        exit();
     }
 }
 ?>

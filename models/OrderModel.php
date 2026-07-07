@@ -8,13 +8,15 @@ class OrderModel {
         $this->conn = $db;
     }
 
-    // Tạo đơn hàng mới (Dùng Prepared Statement bảo vệ thông tin khách nhập)
-    public function createOrder($user_id, $name, $phone, $address, $total_price, $payment_method = 'COD') {
+    // Tạo đơn hàng mới (Hỗ trợ đầy đủ e-commerce fields)
+    public function createOrder($user_id, $name, $phone, $address, $total_price, $payment_method = 'COD', $delivery_method = 'shipping', $shipping_fee = 0, $vat_amount = 0, $discount_amount = 0, $coupon_id = null, $points_used = 0, $points_earned = 0) {
         $user_id_val = $user_id ? intval($user_id) : null;
         
-        $stmt = $this->conn->prepare("INSERT INTO orders (user_id, customer_name, customer_phone, customer_address, total_price, payment_method) VALUES (?, ?, ?, ?, ?, ?)");
-        // i: integer, s: string, d: double
-        $stmt->bind_param("isssds", $user_id_val, $name, $phone, $address, $total_price, $payment_method);
+        $sql = "INSERT INTO orders (user_id, customer_name, customer_phone, customer_address, total_price, payment_method, delivery_method, shipping_fee, vat_amount, discount_amount, coupon_id, points_used, points_earned) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("isssdssddddii", $user_id_val, $name, $phone, $address, $total_price, $payment_method, $delivery_method, $shipping_fee, $vat_amount, $discount_amount, $coupon_id, $points_used, $points_earned);
         
         if ($stmt->execute()) {
             $insert_id = $stmt->insert_id;

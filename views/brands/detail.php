@@ -18,13 +18,14 @@ $extraCSS = "
         bottom: -40px;
         left: 50%;
         transform: translateX(-50%);
-        background: #fff;
-        border-radius: 4px;
+        background: #fdfbf7; /* Đổi màu nền từ trắng sang be nhạt sang trọng */
+        border-radius: 8px;
         padding: 20px 40px;
         text-align: center;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
         width: 80%;
         max-width: 800px;
+        border: 1px solid #f0ebe1;
     }
     .brand-logo-img {
         width: 100px;
@@ -32,10 +33,10 @@ $extraCSS = "
         object-fit: contain;
         background: #fff;
         border-radius: 4px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
         margin-top: -70px;
         margin-bottom: 15px;
-        border: 2px solid #fff;
+        border: 3px solid #fdfbf7; /* Khớp với nền mới của info-box */
     }
     .brand-stats {
         font-size: 0.9rem;
@@ -51,18 +52,28 @@ $extraCSS = "
         margin-bottom: 0;
     }
     
-    /* CSS Bộ lọc */
-    .filter-sidebar { background: var(--bg-card, #f8f8f8); padding: 25px; border-radius: 4px; border: none; }
-    .filter-group { border-bottom: 1px solid #e5e7eb; padding-bottom: 20px; margin-bottom: 20px; }
-    .filter-title { font-family: var(--font-heading, 'Playfair Display', serif); font-size: 1.15rem; color: var(--brand-primary, #7A1C1C); margin-bottom: 15px; font-weight: 600;}
+    /* CSS Bộ lọc phong cách Beauty Box */
+    .filter-sidebar { background: #fff; padding: 0; border: none; }
+    .filter-main-title { font-size: 1.15rem; font-weight: 800; text-transform: uppercase; margin-bottom: 25px; letter-spacing: 0.5px; }
+    .filter-group { border-bottom: 1px solid #f1f1f1; padding-bottom: 20px; margin-bottom: 20px; }
+    .filter-group-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 15px; }
+    .filter-group-title { font-weight: 700; font-size: 0.95rem; color: #1a1a1a; margin: 0; }
+    .filter-group-icon { font-size: 0.8rem; color: #1a1a1a; transition: transform 0.3s; }
+    .filter-group-icon.collapsed { transform: rotate(180deg); }
+    .filter-content { overflow: hidden; transition: max-height 0.3s ease-out; }
     .filter-search-box { position: relative; margin-bottom: 15px; }
-    .filter-search-box input { width: 100%; padding: 10px 10px 10px 35px; border: 1px solid #e5e7eb; border-radius: 4px; outline: none; background: white;}
-    .filter-search-box i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; }
-    .filter-list { list-style: none; padding: 0; margin: 0; max-height: 250px; overflow-y: auto; }
-    .filter-item { margin-bottom: 12px; }
-    .filter-item input[type=\"checkbox\"] { margin-right: 10px; accent-color: var(--brand-primary, #7A1C1C); border-radius: 2px; }
-    .hidden-item { display: none; }
-    .btn-view-more { color: #6b7280; background: none; border: none; padding: 0; font-size: 0.85rem; text-decoration: underline; margin-top: 5px; }
+    .filter-search-box input { width: 100%; padding: 8px 10px 8px 32px; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 0.85rem; outline: none; }
+    .filter-search-box input:focus { border-color: #1a1a1a; }
+    .filter-search-box i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #999; font-size: 0.85rem; }
+    .filter-list { list-style: none; padding: 0; margin: 0; }
+    .filter-item { margin-bottom: 10px; display: flex; align-items: center; }
+    .filter-checkbox { display: flex; align-items: center; cursor: pointer; font-size: 0.95rem; color: #1a1a1a; width: 100%; transition: color 0.2s;}
+    .filter-checkbox:hover { color: #000; }
+    .filter-item input[type=\"checkbox\"] { margin-right: 10px; accent-color: #1a1a1a; cursor: pointer; width: 1.1rem; height: 1.1rem; }
+    .hidden-item { display: none !important; }
+    .btn-view-more { background: none; border: none; padding: 0; text-decoration: underline; color: #1a1a1a; font-size: 0.85rem; margin-top: 5px; cursor: pointer; font-weight: 500; }
+    .btn-view-more:hover { color: #000; }
+    .filter-badge { font-size: 0.85rem; color: #6c757d; margin-left: 0.2rem; }
     
     /* CSS Lưới Sản Phẩm Mới (Sửa lỗi vỡ khung) */
     .product-card { border: none; background: transparent; width: 100%; }
@@ -111,45 +122,84 @@ $logoSrc = (!empty($brandInfo['logo']) && $brandInfo['logo'] != 'https://via.pla
                     <!-- Giữ lại tên hãng trên URL để không bị mất kết quả -->
                     <input type="hidden" name="name" value="<?php echo htmlspecialchars($brandInfo['name']); ?>">
 
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="filter-main-title mb-0">Bộ lọc</h3>
+                        <?php if(!empty($_GET['price']) || !empty($_GET['category'])): ?>
+                            <a href="index.php?controller=brand&action=detail&name=<?php echo urlencode($brandInfo['name']); ?>" class="text-danger small fw-bold text-decoration-none" style="text-decoration: underline !important;">Xóa tất cả</a>
+                        <?php endif; ?>
+                    </div>
+
                     <!-- 1. Giá sản phẩm -->
                     <div class="filter-group">
-                        <div class="filter-title">Giá sản phẩm</div>
-                        <ul class="filter-list">
-                            <li class="filter-item"><label><input type="checkbox" name="price[]" value="0-500000"> Dưới 500.000đ</label></li>
-                            <li class="filter-item"><label><input type="checkbox" name="price[]" value="500000-1000000"> 500.000đ - 1.000.000đ</label></li>
-                            <li class="filter-item"><label><input type="checkbox" name="price[]" value="1000000-1500000"> 1.000.000đ - 1.500.000đ</label></li>
-                            <li class="filter-item"><label><input type="checkbox" name="price[]" value="1500000-"> Trên 1.500.000đ</label></li>
-                        </ul>
+                        <div class="filter-group-header toggle-accordion" data-target="filter-price">
+                            <h5 class="filter-group-title">Giá sản phẩm</h5>
+                            <i class="fas fa-chevron-up filter-group-icon"></i>
+                        </div>
+                        <div class="filter-content" id="filter-price">
+                            <ul class="filter-list">
+                                <?php 
+                                $currentPrices = isset($_GET['price']) && is_array($_GET['price']) ? $_GET['price'] : [];
+                                $newPriceRanges = [
+                                    '0-500000' => 'Dưới 500.000đ',
+                                    '500000-1000000' => '500.000đ - 1.000.000đ',
+                                    '1000000-1500000' => '1.000.000đ - 1.500.000đ',
+                                    '1500000-2000000' => '1.500.000đ - 2.000.000đ',
+                                    '2000000-0' => 'Trên 2.000.000đ'
+                                ];
+                                foreach($newPriceRanges as $val => $label): 
+                                    $isChecked = in_array($val, $currentPrices) ? 'checked' : '';
+                                ?>
+                                    <li class="filter-item">
+                                        <label class="filter-checkbox w-100">
+                                            <input type="checkbox" name="price[]" value="<?php echo $val; ?>" <?php echo $isChecked; ?> onchange="document.getElementById('filterForm').submit();">
+                                            <?php echo $label; ?>
+                                        </label>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
                     </div>
 
                     <!-- 2. Loại sản phẩm -->
                     <div class="filter-group border-0 mb-0 pb-0">
-                        <div class="filter-title">Loại sản phẩm</div>
-                        <div class="filter-search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" class="searchInput" data-target="catList" placeholder="Tìm...">
+                        <div class="filter-group-header toggle-accordion" data-target="filter-category">
+                            <h5 class="filter-group-title">Loại sản phẩm</h5>
+                            <i class="fas fa-chevron-up filter-group-icon"></i>
                         </div>
-                        <ul class="filter-list" id="catList">
-                            <?php 
-                            $catIndex = 0;
-                            if (isset($filterCategories)) {
-                                foreach($filterCategories as $cat): 
-                                    $count = isset($catCounts[$cat]) ? $catCounts[$cat] : 0;
-                                    $isHidden = $catIndex >= 6 ? 'hidden-item' : '';
-                                ?>
-                                    <li class="filter-item <?php echo $isHidden; ?>">
-                                        <label>
-                                            <input type="checkbox" name="category[]" value="<?php echo htmlspecialchars($cat); ?>">
-                                            <?php echo htmlspecialchars($cat); ?> (<?php echo $count; ?>)
-                                        </label>
-                                    </li>
-                                <?php $catIndex++; endforeach; 
-                            } ?>
-                        </ul>
-                        <button type="button" class="btn-view-more" data-target="catList">Xem thêm</button>
+                        <div class="filter-content" id="filter-category">
+                            <div class="filter-search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" class="searchInput" data-target="catList" placeholder="Tìm">
+                            </div>
+                            <ul class="filter-list" id="catList">
+                                <?php 
+                                $catIndex = 0;
+                                $currentCategories = isset($_GET['category']) && is_array($_GET['category']) ? $_GET['category'] : [];
+                                if (isset($filterCategories)) {
+                                    foreach($filterCategories as $cat): 
+                                        $count = isset($catCounts[$cat]) ? $catCounts[$cat] : 0;
+                                        $isChecked = in_array($cat, $currentCategories) ? 'checked' : '';
+                                        $isHidden = $catIndex >= 5 ? 'hidden-item' : '';
+                                    ?>
+                                        <li class="filter-item <?php echo $isHidden; ?>">
+                                            <label class="filter-checkbox w-100">
+                                                <input type="checkbox" name="category[]" value="<?php echo htmlspecialchars($cat); ?>" <?php echo $isChecked; ?> onchange="document.getElementById('filterForm').submit();">
+                                                <span class="item-name"><?php echo htmlspecialchars($cat); ?></span>
+                                                <span class="filter-badge">(<?php echo $count; ?>)</span>
+                                            </label>
+                                        </li>
+                                    <?php $catIndex++; endforeach; 
+                                } ?>
+                            </ul>
+                            <?php if($catIndex > 5): ?>
+                                <button type="button" class="btn-view-more" data-target="catList">Xem thêm</button>
+                            <?php endif; ?>
+                        </div>
                     </div>
 
-                    <button type="submit" class="btn text-white w-100 mt-4 py-3 fw-bold" style="background-color: var(--brand-primary, #7A1C1C); border-radius: 4px;">Lọc kết quả</button>
+                    <noscript>
+                        <button type="submit" class="btn text-white w-100 mt-4 py-3 fw-bold" style="background-color: var(--brand-primary, #7A1C1C); border-radius: 4px;">Áp dụng bộ lọc</button>
+                    </noscript>
                 </form>
             </div>
         </div>
@@ -228,50 +278,88 @@ $logoSrc = (!empty($brandInfo['logo']) && $brandInfo['logo'] != 'https://via.pla
 $extraJS = <<<EOT
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // JS Ẩn/hiện Xem thêm
+    // Accordion Toggle
+    const accordions = document.querySelectorAll('.toggle-accordion');
+    accordions.forEach(acc => {
+        acc.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const targetContent = document.getElementById(targetId);
+            const icon = this.querySelector('.filter-group-icon');
+            
+            if (targetContent.style.maxHeight) {
+                targetContent.style.maxHeight = null;
+                icon.classList.add('collapsed');
+            } else {
+                targetContent.style.maxHeight = targetContent.scrollHeight + "px";
+                icon.classList.remove('collapsed');
+            }
+        });
+        
+        // Initialize all as open
+        const targetId = acc.getAttribute('data-target');
+        const targetContent = document.getElementById(targetId);
+        if(targetContent) {
+            targetContent.style.maxHeight = targetContent.scrollHeight + "px";
+        }
+    });
+
+    // View More Button
     const viewMoreBtns = document.querySelectorAll('.btn-view-more');
     viewMoreBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             const targetId = this.getAttribute('data-target');
-            const hiddenItems = document.getElementById(targetId).querySelectorAll('.hidden-item');
+            const hiddenItems = document.getElementById(targetId).querySelectorAll('.filter-item.hidden-item');
+            
             if (this.innerText === 'Xem thêm') {
-                hiddenItems.forEach(item => item.style.display = 'block');
+                hiddenItems.forEach(item => item.style.display = 'flex');
                 this.innerText = 'Thu gọn';
             } else {
-                hiddenItems.forEach(item => item.style.display = 'none');
+                hiddenItems.forEach(item => {
+                    if(!item.querySelector('input').checked) {
+                        item.style.display = 'none';
+                    }
+                });
                 this.innerText = 'Xem thêm';
+            }
+            // Update accordion max height
+            const parentContent = this.closest('.filter-content');
+            if(parentContent && parentContent.style.maxHeight) {
+                parentContent.style.maxHeight = parentContent.scrollHeight + "px";
             }
         });
     });
 
-    // JS Tìm kiếm trong bộ lọc
-    document.querySelectorAll('.searchInput').forEach(input => {
-        input.addEventListener('keyup', function() {
-            const filterText = this.value.toLowerCase().trim();
-            const listId = this.getAttribute('data-target');
-            const items = document.getElementById(listId).querySelectorAll('.filter-item');
-            const btnMore = this.parentElement.parentElement.querySelector('.btn-view-more');
-            
-            if(btnMore) btnMore.style.display = filterText ? 'none' : 'block';
-
-            items.forEach(item => {
-                const text = item.querySelector('label').innerText.toLowerCase();
-                const isHidden = item.classList.contains('hidden-item');
-                if(text.includes(filterText)) item.style.display = 'block';
-                else item.style.display = 'none';
-                
-                if(!filterText && isHidden && btnMore && btnMore.innerText === 'Xem thêm') item.style.display = 'none';
-            });
+    // Ensure checked hidden items are always visible on load
+    document.querySelectorAll('.filter-list').forEach(list => {
+        const hiddenChecked = list.querySelectorAll('.hidden-item input:checked');
+        hiddenChecked.forEach(input => {
+            input.closest('.filter-item').style.display = 'flex';
         });
     });
 
-    // JS Giữ trạng thái tick checkbox
-    const urlParams = new URLSearchParams(window.location.search);
-    document.querySelectorAll('#filterForm input[type="checkbox"]').forEach(cb => {
-        if (urlParams.getAll(cb.name).includes(cb.value)) cb.checked = true;
+    // Search in Filter
+    document.querySelectorAll('.searchInput').forEach(input => {
+        input.addEventListener('keyup', function() {
+            const filterText = this.value.toLowerCase().trim();
+            const targetId = this.getAttribute('data-target');
+            const items = document.getElementById(targetId).querySelectorAll('.filter-item');
+            
+            items.forEach(item => {
+                const text = item.querySelector('.item-name').innerText.toLowerCase();
+                if (text.includes(filterText)) {
+                    item.style.display = 'flex'; 
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Re-adjust accordion height
+            const parentContent = document.getElementById(targetId).closest('.filter-content');
+            if(parentContent) {
+                parentContent.style.maxHeight = parentContent.scrollHeight + "px";
+            }
+        });
     });
-    const sortSelect = document.querySelector('select[name="sort"]');
-    if (sortSelect && urlParams.has('sort')) sortSelect.value = urlParams.get('sort');
 });
 </script>
 EOT;

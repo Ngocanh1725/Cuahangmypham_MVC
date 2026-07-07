@@ -11,7 +11,7 @@ class Database {
         $this->conn = null;
         try {
             $this->conn = new mysqli($this->host, $this->username, $this->password, $this->database);
-            $this->conn->set_charset("utf8");
+            $this->conn->set_charset("utf8mb4");
         } catch(Exception $e) {
             echo "Lỗi kết nối CSDL: " . $e->getMessage();
         }

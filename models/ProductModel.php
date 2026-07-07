@@ -146,7 +146,9 @@ class ProductModel {
         // Lọc Menu Navbar ngang
         if (!empty($params['filter']) && $params['filter'] != 'all') {
             $filter = $params['filter'];
-            if ($filter == 'promotion') {
+            if ($filter == 'flash_sale') {
+                $sql .= " AND p.is_flash_sale = 1";
+            } elseif ($filter == 'promotion') {
                 $sql .= " AND p.old_price > p.price";
             } elseif ($filter == 'skincare') {
                 $sql .= " AND c.name LIKE '%Chăm sóc da%'";
@@ -244,6 +246,110 @@ class ProductModel {
             while ($row = $result->fetch_assoc()) {
                 $products[] = $row;
             }
+        }
+        $stmt->close();
+        return $products;
+    }
+
+    // ---------------------------------------------------------
+    // HÀM MỚI CHO TRANG CHỦ BEAUTY BOX STYLE
+    // ---------------------------------------------------------
+
+    // Lấy sản phẩm theo flag (is_flash_sale, is_trending, is_summer)
+    public function getProductsByFlag($flagColumn, $limit = 8) {
+        $allowedColumns = ['is_flash_sale', 'is_trending', 'is_summer'];
+        if (!in_array($flagColumn, $allowedColumns)) {
+            return [];
+        }
+        
+        $sql = "SELECT p.*, b.name as brand_name FROM products p LEFT JOIN brands b ON p.brand_id = b.id WHERE p.status = 1 AND p.{$flagColumn} = 1 ORDER BY p.id DESC LIMIT ?";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("i", $limit);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $products = [];
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) { 
+                $products[] = $row; 
+            }
+        }
+        $stmt->close();
+        return $products;
+    }
+
+    // Lấy Banner theo position
+    public function getBannersByPosition($position, $limit = 10) {
+        $banners = [];
+        $stmt = $this->conn->prepare("SELECT * FROM banners WHERE status = 1 AND position = ? ORDER BY id DESC LIMIT ?");
+        $stmt->bind_param("si", $position, $limit);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) { 
+                $banners[] = $row; 
+            }
+        }
+        $stmt->close();
+        return $banners;
+    }
+
+    // Lấy sản phẩm Flash Sale (có old_price > price)
+    public function getFlashSaleProducts($limit = 10) {
+        $sql = "SELECT p.*, b.name as brand_name,
+                    ROUND((p.old_price - p.price) / p.old_price * 100) as discount_pct
+                FROM products p
+                LEFT JOIN brands b ON p.brand_id = b.id
+                WHERE p.status = 1 AND p.old_price > p.price AND p.old_price > 0
+                ORDER BY discount_pct DESC, p.id DESC
+                LIMIT ?";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("i", $limit);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $products = [];
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) { $products[] = $row; }
+        }
+        $stmt->close();
+        return $products;
+    }
+
+    // Lấy sản phẩm theo tên danh mục (cho tab xu hướng)
+    public function getProductsByCategoryName($categoryName, $limit = 8) {
+        $sql = "SELECT p.*, b.name as brand_name
+                FROM products p
+                LEFT JOIN categories c ON p.category_id = c.id
+                LEFT JOIN brands b ON p.brand_id = b.id
+                WHERE p.status = 1 AND c.name LIKE ?
+                ORDER BY p.id DESC LIMIT ?";
+        $stmt = $this->conn->prepare($sql);
+        $search = "%$categoryName%";
+        $stmt->bind_param("si", $search, $limit);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $products = [];
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) { $products[] = $row; }
+        }
+        $stmt->close();
+        return $products;
+    }
+
+    // Lấy tất cả sản phẩm có status=1 với thông tin brand (cho tab xu hướng)
+    public function getActiveProductsForHome($limit = 8) {
+        $sql = "SELECT p.*, b.name as brand_name, c.name as category_name
+                FROM products p
+                LEFT JOIN brands b ON p.brand_id = b.id
+                LEFT JOIN categories c ON p.category_id = c.id
+                WHERE p.status = 1
+                ORDER BY p.id DESC LIMIT ?";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("i", $limit);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $products = [];
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) { $products[] = $row; }
         }
         $stmt->close();
         return $products;

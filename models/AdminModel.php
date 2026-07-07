@@ -6,6 +6,10 @@ class AdminModel {
         $this->conn = $db;
     }
 
+    public function getConn() {
+        return $this->conn;
+    }
+
     public function getTotalProducts() {
         $sql = "SELECT COUNT(*) as total FROM products";
         $result = $this->conn->query($sql);
@@ -114,9 +118,9 @@ class AdminModel {
         return $products;
     }
 
-    public function addProduct($name, $price, $category_id, $status, $image, $stock, $brand_id = null) {
-        $stmt = $this->conn->prepare("INSERT INTO products (name, price, category_id, status, image, stock, brand_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sdiisii", $name, $price, $category_id, $status, $image, $stock, $brand_id);
+    public function addProduct($name, $price, $category_id, $status, $image, $stock, $brand_id = null, $is_flash_sale = 0, $is_trending = 0, $is_summer = 0) {
+        $stmt = $this->conn->prepare("INSERT INTO products (name, price, category_id, status, image, stock, brand_id, is_flash_sale, is_trending, is_summer) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("sdiisiiiii", $name, $price, $category_id, $status, $image, $stock, $brand_id, $is_flash_sale, $is_trending, $is_summer);
         $result = $stmt->execute();
         $stmt->close();
         return $result;
@@ -132,9 +136,9 @@ class AdminModel {
         return $product;
     }
 
-    public function updateProduct($id, $name, $price, $category_id, $status, $image, $stock, $brand_id = null) {
-        $stmt = $this->conn->prepare("UPDATE products SET name=?, price=?, category_id=?, status=?, image=?, stock=?, brand_id=? WHERE id=?");
-        $stmt->bind_param("sdiisiii", $name, $price, $category_id, $status, $image, $stock, $brand_id, $id);
+    public function updateProduct($id, $name, $price, $category_id, $status, $image, $stock, $brand_id = null, $is_flash_sale = 0, $is_trending = 0, $is_summer = 0) {
+        $stmt = $this->conn->prepare("UPDATE products SET name=?, price=?, category_id=?, status=?, image=?, stock=?, brand_id=?, is_flash_sale=?, is_trending=?, is_summer=? WHERE id=?");
+        $stmt->bind_param("sdiisiiiiii", $name, $price, $category_id, $status, $image, $stock, $brand_id, $is_flash_sale, $is_trending, $is_summer, $id);
         $result = $stmt->execute();
         $stmt->close();
         return $result;
@@ -148,122 +152,19 @@ class AdminModel {
         return $result;
     }
 
-    public function updatePromotion($id, $old_price) {
-        $stmt = $this->conn->prepare("UPDATE products SET old_price = ? WHERE id = ?");
-        $stmt->bind_param("di", $old_price, $id);
+    public function updatePromotion($id, $old_price, $is_flash_sale = 0) {
+        $stmt = $this->conn->prepare("UPDATE products SET old_price = ?, is_flash_sale = ? WHERE id = ?");
+        $stmt->bind_param("iii", $old_price, $is_flash_sale, $id);
         $result = $stmt->execute();
         $stmt->close();
         return $result;
     }
 
     // ---------------------------------------------------------
-    // QUẢN LÝ BANNER QUẢNG CÁO
+    // QUẢN LÝ BANNER QUẢNG CÁO (Đã tách sang BannerModel.php)
+    // THƯƠNG HIỆU (Đã tách sang BrandModel.php)
     // ---------------------------------------------------------
-    public function getAllBanners() {
-        $banners = [];
-        try {
-            $sql = "SELECT * FROM banners ORDER BY id DESC";
-            $result = $this->conn->query($sql);
-            if ($result && $result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    $banners[] = $row;
-                }
-            }
-        } catch (Exception $e) {}
-        return $banners;
-    }
 
-    public function addBanner($title, $image, $link, $description, $position, $status) {
-        try {
-            $stmt = $this->conn->prepare("INSERT INTO banners (title, image, link, description, position, status) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssssi", $title, $image, $link, $description, $position, $status);
-            $result = $stmt->execute();
-            $stmt->close();
-            return $result;
-        } catch (Exception $e) { return false; }
-    }
-
-    public function getBannerById($id) {
-        try {
-            $stmt = $this->conn->prepare("SELECT * FROM banners WHERE id = ?");
-            $stmt->bind_param("i", $id);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $banner = $result->fetch_assoc();
-            $stmt->close();
-            return $banner;
-        } catch (Exception $e) { return null; }
-    }
-
-    public function updateBanner($id, $title, $image, $link, $description, $position, $status) {
-        try {
-            $stmt = $this->conn->prepare("UPDATE banners SET title=?, image=?, link=?, description=?, position=?, status=? WHERE id=?");
-            $stmt->bind_param("sssssii", $title, $image, $link, $description, $position, $status, $id);
-            $result = $stmt->execute();
-            $stmt->close();
-            return $result;
-        } catch (Exception $e) { return false; }
-    }
-
-    public function deleteBanner($id) {
-        try {
-            $stmt = $this->conn->prepare("DELETE FROM banners WHERE id=?");
-            $stmt->bind_param("i", $id);
-            $result = $stmt->execute();
-            $stmt->close();
-            return $result;
-        } catch (Exception $e) { return false; }
-    }
-
-    // ---------------------------------------------------------
-    // THƯƠNG HIỆU (BRANDS)
-    // ---------------------------------------------------------
-    public function getAllBrands() {
-        $sql = "SELECT * FROM brands ORDER BY id DESC";
-        $result = $this->conn->query($sql);
-        $brands = [];
-        if ($result && $result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                $brands[] = $row;
-            }
-        }
-        return $brands;
-    }
-
-    public function addBrand($name, $logo, $banner, $description) {
-        $stmt = $this->conn->prepare("INSERT INTO brands (name, logo, banner, description) VALUES (?, ?, ?, ?)");
-        $stmt->bind_param("ssss", $name, $logo, $banner, $description);
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
-    }
-
-    public function getBrandById($id) {
-        $stmt = $this->conn->prepare("SELECT * FROM brands WHERE id = ?");
-        $stmt->bind_param("i", $id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $brand = $result->fetch_assoc();
-        $stmt->close();
-        return $brand;
-    }
-
-    public function updateBrand($id, $name, $logo, $banner, $description) {
-        $stmt = $this->conn->prepare("UPDATE brands SET name=?, logo=?, banner=?, description=? WHERE id=?");
-        $stmt->bind_param("ssssi", $name, $logo, $banner, $description, $id);
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
-    }
-
-    public function deleteBrand($id) {
-        $stmt = $this->conn->prepare("DELETE FROM brands WHERE id=?");
-        $stmt->bind_param("i", $id);
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
-    }
-    
     // ---------------------------------------------------------
     // ĐƠN HÀNG & TÀI KHOẢN (ORDERS & USERS)
     // ---------------------------------------------------------
@@ -353,21 +254,21 @@ class AdminModel {
         return $exists;
     }
 
-    public function addUser($fullname, $email, $password, $role) {
-        $stmt = $this->conn->prepare("INSERT INTO users (full_name, email, password, role) VALUES (?, ?, ?, ?)");
-        $stmt->bind_param("sssi", $fullname, $email, $password, $role);
+    public function addUser($fullname, $email, $password, $role, $permissions = null) {
+        $stmt = $this->conn->prepare("INSERT INTO users (full_name, email, password, role, permissions) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssis", $fullname, $email, $password, $role, $permissions);
         $result = $stmt->execute();
         $stmt->close();
         return $result;
     }
 
-    public function updateUser($id, $fullname, $email, $role, $password = null) {
+    public function updateUser($id, $fullname, $email, $role, $password = null, $permissions = null) {
         if ($password != null) {
-            $stmt = $this->conn->prepare("UPDATE users SET full_name=?, email=?, role=?, password=? WHERE id=?");
-            $stmt->bind_param("ssisi", $fullname, $email, $role, $password, $id);
+            $stmt = $this->conn->prepare("UPDATE users SET full_name=?, email=?, role=?, password=?, permissions=? WHERE id=?");
+            $stmt->bind_param("ssissi", $fullname, $email, $role, $password, $permissions, $id);
         } else {
-            $stmt = $this->conn->prepare("UPDATE users SET full_name=?, email=?, role=? WHERE id=?");
-            $stmt->bind_param("ssii", $fullname, $email, $role, $id);
+            $stmt = $this->conn->prepare("UPDATE users SET full_name=?, email=?, role=?, permissions=? WHERE id=?");
+            $stmt->bind_param("ssisi", $fullname, $email, $role, $permissions, $id);
         }
         $result = $stmt->execute();
         $stmt->close();
@@ -409,18 +310,31 @@ class AdminModel {
         } catch (Exception $e) { return false; }
     }
 
-    public function getAllPosts() {
-        $posts = [];
-        try {
-            $sql = "SELECT * FROM posts ORDER BY id DESC";
-            $result = $this->conn->query($sql);
-            if ($result && $result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    $posts[] = $row;
-                }
-            }
-        } catch (Exception $e) { }
-        return $posts;
+    
+
+    // =========================================================
+    // CẬP NHẬT USER (thêm tier_id, points)
+    // =========================================================
+    public function updateUserTier($id, $tier_id, $points) {
+        $stmt = $this->conn->prepare("UPDATE users SET tier_id=?, points=? WHERE id=?");
+        $stmt->bind_param("iii", $tier_id, $points, $id);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    // Lấy user kèm tên hạng thành viên
+    public function getAllUsersWithTier() {
+        $sql = "SELECT u.*, COALESCE(mt.name, 'Bronze') as tier_name, COALESCE(mt.discount_percent, 0) as tier_discount
+                FROM users u 
+                LEFT JOIN membership_tiers mt ON u.tier_id = mt.id 
+                ORDER BY u.id DESC";
+        $result = $this->conn->query($sql);
+        $data = [];
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) $data[] = $row;
+        }
+        return $data;
     }
 }
 ?>

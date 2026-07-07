@@ -139,19 +139,107 @@ class CartController {
             }
         }
 
+        // --- FETCH DỮ LIỆU CẤU HÌNH CHO CHECKOUT ---
+        require_once 'models/AdminModel.php';
+        $adminModel = new AdminModel($this->conn);
+        $settings = $adminModel->getAllSettings();
+        require_once 'models/StoreModel.php';
+        $storeModel = new StoreModel($this->conn);
+        $stores = $storeModel->getActiveStores();
+        
+        $vatEnabled = isset($settings['vat_enabled']['setting_value']) && $settings['vat_enabled']['setting_value'] == '1';
+        $vatPercent = $vatEnabled ? floatval($settings['vat_percent']['setting_value'] ?? 10) : 0;
+        $shippingDefault = floatval($settings['shipping_fee_default']['setting_value'] ?? 30000);
+        $freeShippingMin = floatval($settings['free_shipping_min']['setting_value'] ?? 500000);
+        
+        // Lấy thông tin user (điểm, tier discount)
+        $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+        $userData = null;
+        if ($user_id) {
+            require_once 'models/UserModel.php';
+            $userModel = new UserModel($this->conn);
+            $userData = $userModel->getUserById($user_id);
+        }
+
         // Nếu khách hàng bấm "Xác nhận đặt hàng"
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $name = $_POST['customer_name'] ?? '';
             $phone = $_POST['customer_phone'] ?? '';
-            $address = $_POST['customer_address'] ?? '';
-            $payment_method = $_POST['payment_method'] ?? 'COD'; // Lấy phương thức thanh toán
-            $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+            
+            // Xử lý Giao hàng hay Lấy tại cửa hàng
+            $delivery_method = $_POST['delivery_method'] ?? 'shipping';
+            if ($delivery_method == 'pickup') {
+                $store_id = intval($_POST['pickup_store'] ?? 0);
+                $address = "Lấy tại cửa hàng ID: " . $store_id;
+                $shipping_fee = 0;
+            } else {
+                $address = $_POST['customer_address'] ?? '';
+                $shipping_fee = ($totalPrice >= $freeShippingMin) ? 0 : $shippingDefault;
+            }
+            
+            $payment_method = $_POST['payment_method'] ?? 'COD'; 
+
+            // Server-side validation cho Coupon và Points
+            $discount_amount = 0;
+            $coupon_id = null;
+            $points_used = 0;
+
+            // 1. Áp dụng mã giảm giá (Dữ liệu gửi lên từ form ẩn, tạm thời ta sẽ mock up server-side nếu có)
+            // Trong thực tế cần có hidden input chứa mã coupon
+            $coupon_code = $_POST['coupon_code'] ?? '';
+            if (!empty($coupon_code)) {
+                require_once 'models/CouponModel.php';
+                $couponModel = new CouponModel($this->conn);
+                $couponRes = $couponModel->validateCoupon($coupon_code);
+                if ($couponRes['valid']) {
+                    $coupon = $couponRes['coupon'];
+                    $coupon_id = $coupon['id'];
+                    if ($totalPrice >= $coupon['min_order_value']) {
+                        if ($coupon['type'] == 'percent') {
+                            $discount_val = $totalPrice * ($coupon['discount_value'] / 100);
+                            if ($coupon['max_discount'] > 0 && $discount_val > $coupon['max_discount']) {
+                                $discount_val = $coupon['max_discount'];
+                            }
+                            $discount_amount += $discount_val;
+                        } else {
+                            $discount_amount += $coupon['discount_value'];
+                        }
+                    }
+                }
+            }
+
+            // 2. Áp dụng hạng thành viên
+            if ($userData && $userData['discount_percent'] > 0) {
+                $discount_amount += $totalPrice * ($userData['discount_percent'] / 100);
+            }
+
+            // 3. Sử dụng điểm
+            $use_points = isset($_POST['use_points']) ? 1 : 0;
+            if ($use_points && $userData && $userData['points'] > 0) {
+                $maxPointsToUse = min($userData['points'], $totalPrice - $discount_amount);
+                if ($maxPointsToUse > 0) {
+                    $points_used = $maxPointsToUse;
+                    $discount_amount += $points_used;
+                }
+            }
+
+            if ($discount_amount > $totalPrice) $discount_amount = $totalPrice;
+
+            // 4. Tính VAT
+            $vat_amount = $vatEnabled ? ($totalPrice - $discount_amount) * ($vatPercent / 100) : 0;
+            
+            // 5. Tổng cuối
+            $finalTotal = $totalPrice - $discount_amount + $vat_amount + $shipping_fee;
+
+            // 6. Tính điểm tích lũy
+            $points_per_1000 = floatval($settings['points_per_1000']['setting_value'] ?? 1);
+            $points_earned = floor($finalTotal / 1000) * $points_per_1000;
 
             try {
                 $this->conn->begin_transaction();
 
                 // 1. Tạo đơn hàng chung
-                $order_id = $orderModel->createOrder($user_id, $name, $phone, $address, $totalPrice, $payment_method);
+                $order_id = $orderModel->createOrder($user_id, $name, $phone, $address, $finalTotal, $payment_method, $delivery_method, $shipping_fee, $vat_amount, $discount_amount, $coupon_id, $points_used, $points_earned);
                 
                 if (!$order_id) {
                     throw new Exception("Hệ thống đang bận, không thể tạo đơn hàng lúc này!");
@@ -162,13 +250,27 @@ class CartController {
                     $orderModel->createOrderDetail($order_id, $item['id'], $item['price'], $item['qty']);
                     $orderModel->decreaseStock($item['id'], $item['qty']);
                 }
+
+                // 3. Trừ điểm user đã dùng và cộng điểm tích lũy
+                if ($user_id && ($points_used > 0 || $points_earned > 0)) {
+                    $newPoints = $userData['points'] - $points_used + $points_earned;
+                    $userModel->updateUserTier($user_id, $userData['tier_id'], $newPoints);
+                }
+
+                // 4. Tăng lượt sử dụng mã giảm giá
+                if ($coupon_id) {
+                    $stmt = $this->conn->prepare("UPDATE coupons SET used_count = used_count + 1 WHERE id = ?");
+                    $stmt->bind_param("i", $coupon_id);
+                    $stmt->execute();
+                    $stmt->close();
+                }
                 
                 $this->conn->commit();
                 
-                // 3. Xóa giỏ hàng vì đã đặt thành công
+                // 5. Xóa giỏ hàng vì đã đặt thành công
                 unset($_SESSION['cart']);
                 
-                // 4. Chuyển tới trang Hóa Đơn
+                // 6. Chuyển tới trang Hóa Đơn
                 header("Location: index.php?controller=cart&action=invoice&id=" . $order_id);
                 exit();
                 
@@ -199,8 +301,94 @@ class CartController {
         }
         
         $orderDetails = $orderModel->getOrderDetails($id);
-
         require_once 'views/cart/invoice.php';
+    }
+
+    // ---------------------------------------------------------
+    // AJAX ENDPOINTS CHO MINI CART (BƯỚC 4)
+    // ---------------------------------------------------------
+    public function ajaxGetCart() {
+        header('Content-Type: application/json');
+        $cartItems = [];
+        $totalPrice = 0;
+        $count = 0;
+
+        if (!empty($_SESSION['cart'])) {
+            $ids = array_keys($_SESSION['cart']);
+            $str_ids = implode(',', $ids);
+            
+            $sql = "SELECT id, name, price, image FROM products WHERE id IN ($str_ids)";
+            $result = $this->conn->query($sql);
+            
+            if ($result && $result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    $qty = $_SESSION['cart'][$row['id']];
+                    $row['qty'] = $qty;
+                    $totalPrice += $row['price'] * $qty;
+                    $count += $qty;
+                    $cartItems[] = $row;
+                }
+            }
+        }
+        echo json_encode(['items' => $cartItems, 'total' => $totalPrice, 'count' => $count]);
+        exit();
+    }
+
+    public function ajaxUpdateCart() {
+        header('Content-Type: application/json');
+        if ($_SERVER["REQUEST_METHOD"] == "POST") {
+            $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+            $qty = isset($_POST['qty']) ? intval($_POST['qty']) : 0;
+
+            if ($id > 0 && $qty > 0) {
+                $sql = "SELECT stock FROM products WHERE id = ?";
+                $stmt = $this->conn->prepare($sql);
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $product = $result->fetch_assoc();
+                $stmt->close();
+
+                if ($product) {
+                    if ($qty > $product['stock']) {
+                        echo json_encode(['success' => false, 'message' => 'Vượt quá số lượng tồn kho']);
+                        exit();
+                    } else {
+                        $_SESSION['cart'][$id] = $qty;
+                        echo json_encode(['success' => true]);
+                        exit();
+                    }
+                }
+            }
+        }
+        echo json_encode(['success' => false, 'message' => 'Lỗi cập nhật']);
+        exit();
+    }
+
+    public function ajaxRemoveItem() {
+        header('Content-Type: application/json');
+        if ($_SERVER["REQUEST_METHOD"] == "POST") {
+            $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+            if ($id > 0 && isset($_SESSION['cart'][$id])) {
+                unset($_SESSION['cart'][$id]);
+                echo json_encode(['success' => true]);
+                exit();
+            }
+        }
+        echo json_encode(['success' => false]);
+        exit();
+    }
+
+    public function ajaxGetCartCount() {
+        header('Content-Type: application/json');
+        $count = 0;
+        if (isset($_SESSION['cart'])) {
+            foreach ($_SESSION['cart'] as $qty) {
+                $count += $qty;
+            }
+        }
+        echo json_encode(['count' => $count]);
+        exit();
     }
 }
 ?>

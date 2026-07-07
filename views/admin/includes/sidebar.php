@@ -1,3 +1,33 @@
+<?php
+// Lấy danh sách quyền của user
+$userPerms = [];
+if (isset($_SESSION['role']) && $_SESSION['role'] == 2) {
+    if (isset($_SESSION['user_id'])) {
+        // Luôn lấy quyền mới nhất từ DB để cập nhật tức thời
+        $conn = new mysqli('localhost', 'root', '', 'cosmetics_db');
+        if (!$conn->connect_error) {
+            $stmt = $conn->prepare("SELECT permissions FROM users WHERE id = ?");
+            $stmt->bind_param("i", $_SESSION['user_id']);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            if ($res && $res->num_rows > 0) {
+                $row = $res->fetch_assoc();
+                $_SESSION['permissions'] = $row['permissions'];
+            }
+            $stmt->close();
+            $conn->close();
+        }
+    }
+    $userPerms = isset($_SESSION['permissions']) ? explode(',', $_SESSION['permissions']) : [];
+}
+
+// Hàm kiểm tra hiển thị menu
+function hasMenuPermission($module, $role, $perms) {
+    if ($role == 1) return true; // Admin thấy tất cả
+    if ($role == 2) return in_array($module, $perms); // Staff thấy module được cấp
+    return false;
+}
+?>
 <style>
     /* CSS Tùy chỉnh riêng cho Sidebar Admin */
     .admin-sidebar {
@@ -62,26 +92,35 @@
                     <i class="fas fa-chart-pie"></i> Tổng quan
                 </a>
             </li>
+            <?php if (hasMenuPermission('products', $_SESSION['role'] ?? 0, $userPerms)): ?>
             <li class="nav-item">
                 <a class="admin-nav-link <?php echo (isset($_GET['action']) && ($_GET['action'] == 'products' || strpos($_GET['action'], 'Product') !== false)) ? 'active' : ''; ?>" href="index.php?controller=admin&action=products">
                     <i class="fas fa-box-open"></i> Quản lý sản phẩm
                 </a>
             </li>
+            <?php endif; ?>
+            <?php if (hasMenuPermission('banners', $_SESSION['role'] ?? 0, $userPerms)): ?>
             <li class="nav-item">
                 <a class="admin-nav-link <?php echo (isset($_GET['action']) && strpos($_GET['action'], 'anner') !== false) ? 'active' : ''; ?>" href="index.php?controller=admin&action=banners">
                     <i class="fas fa-images"></i> Quản lý Banner
                 </a>
             </li>
+            <?php endif; ?>
+            <?php if (hasMenuPermission('brands', $_SESSION['role'] ?? 0, $userPerms)): ?>
             <li class="nav-item">
                 <a class="admin-nav-link <?php echo (isset($_GET['action']) && strpos($_GET['action'], 'rand') !== false) ? 'active' : ''; ?>" href="index.php?controller=admin&action=brands">
                     <i class="fas fa-gem"></i> Quản lý Thương hiệu
                 </a>
             </li>
+            <?php endif; ?>
+            <?php if (hasMenuPermission('products', $_SESSION['role'] ?? 0, $userPerms)): ?>
             <li class="nav-item">
                 <a class="admin-nav-link <?php echo (isset($_GET['action']) && $_GET['action'] == 'promotions') ? 'active' : ''; ?>" href="index.php?controller=admin&action=promotions">
                     <i class="fas fa-tags"></i> Cấu hình Khuyến mãi
                 </a>
             </li>
+            <?php endif; ?>
+            <?php if (hasMenuPermission('orders', $_SESSION['role'] ?? 0, $userPerms)): ?>
             <li class="nav-item">
                 <a class="admin-nav-link <?php echo (isset($_GET['action']) && strpos($_GET['action'], 'order') !== false) ? 'active' : ''; ?>" href="index.php?controller=admin&action=orders">
                     <i class="fas fa-shopping-bag"></i> Quản lý đơn hàng 
@@ -90,13 +129,43 @@
                     <?php endif; ?>
                 </a>
             </li>
+            <?php endif; ?>
             
             <!-- MENU QUẢN LÝ BÀI VIẾT (TẠP CHÍ) -->
+            <?php if (hasMenuPermission('posts', $_SESSION['role'] ?? 0, $userPerms)): ?>
             <li class="nav-item">
                 <a class="admin-nav-link <?php echo (isset($_GET['action']) && strpos($_GET['action'], 'post') !== false) ? 'active' : ''; ?>" href="index.php?controller=admin&action=posts">
                     <i class="fas fa-newspaper"></i> Quản lý Bài viết
                 </a>
             </li>
+            <?php endif; ?>
+
+            <!-- MENU QUẢN LÝ MÃ GIẢM GIÁ -->
+            <?php if (hasMenuPermission('coupons', $_SESSION['role'] ?? 0, $userPerms)): ?>
+            <li class="nav-item">
+                <a class="admin-nav-link <?php echo (isset($_GET['action']) && strpos($_GET['action'], 'oupon') !== false) ? 'active' : ''; ?>" href="index.php?controller=admin&action=coupons">
+                    <i class="fas fa-ticket-alt"></i> Mã Giảm Giá
+                </a>
+            </li>
+            <?php endif; ?>
+
+            <!-- MENU QUẢN LÝ HẠNG THÀNH VIÊN -->
+            <?php if (hasMenuPermission('tiers', $_SESSION['role'] ?? 0, $userPerms)): ?>
+            <li class="nav-item">
+                <a class="admin-nav-link <?php echo (isset($_GET['action']) && strpos($_GET['action'], 'ier') !== false) ? 'active' : ''; ?>" href="index.php?controller=admin&action=tiers">
+                    <i class="fas fa-crown"></i> Hạng Thành Viên
+                </a>
+            </li>
+            <?php endif; ?>
+
+            <!-- MENU QUẢN LÝ CHI NHÁNH -->
+            <?php if (hasMenuPermission('stores', $_SESSION['role'] ?? 0, $userPerms)): ?>
+            <li class="nav-item">
+                <a class="admin-nav-link <?php echo (isset($_GET['action']) && strpos($_GET['action'], 'tore') !== false) ? 'active' : ''; ?>" href="index.php?controller=admin&action=stores">
+                    <i class="fas fa-store"></i> Chi Nhánh
+                </a>
+            </li>
+            <?php endif; ?>
 
             <!-- MENU PHÂN QUYỀN (CHỈ DÀNH CHO ADMIN) -->
             <?php if(isset($_SESSION['role']) && $_SESSION['role'] == 1): ?>

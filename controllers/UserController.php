@@ -43,6 +43,7 @@ class UserController {
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['full_name'] = $user['full_name'];
                 $_SESSION['role'] = $user['role'];
+                $_SESSION['permissions'] = $user['permissions'] ?? '';
 
                 if ($user['role'] == 1 || $user['role'] == 2) {
                     header("Location: index.php?controller=admin&action=index");
@@ -69,16 +70,17 @@ class UserController {
 
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $fullname = trim($_POST['fullname'] ?? '');
+            $phone = trim($_POST['phone'] ?? '');
             $email = trim($_POST['email'] ?? '');
             $password = $_POST['password'] ?? '';
             $confirm_password = $_POST['confirm_password'] ?? '';
 
-            if (empty($fullname) || empty($email) || empty($password)) {
+            if (empty($fullname) || empty($email) || empty($phone) || empty($password)) {
                 $message = "<div class='alert alert-danger text-center'>Vui lòng điền đầy đủ thông tin!</div>";
             } elseif ($password !== $confirm_password) {
                 $message = "<div class='alert alert-danger text-center'>Mật khẩu xác nhận không khớp!</div>";
             } else {
-                if ($this->userModel->register($fullname, $email, $password)) {
+                if ($this->userModel->register($fullname, $email, $phone, $password)) {
                     $_SESSION['register_success'] = "Đăng ký thành công! Vui lòng đăng nhập.";
                     header("Location: index.php?controller=user&action=login");
                     exit();
@@ -129,16 +131,34 @@ class UserController {
         // 2. Xử lý khi người dùng ấn nút "Cập nhật"
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $fullname = trim($_POST['fullname'] ?? '');
+            $phone = trim($_POST['phone'] ?? '');
+            $date_of_birth = trim($_POST['date_of_birth'] ?? '');
             $new_password = $_POST['new_password'] ?? '';
 
             if (empty($fullname)) {
                 $message = "<div class='alert alert-warning'>Tên không được để trống!</div>";
             } else {
-                // Nếu có nhập mật khẩu mới thì mã hóa, không thì truyền null
-                $hashed_password = !empty($new_password) ? password_hash($new_password, PASSWORD_DEFAULT) : null;
+                // Xử lý upload avatar
+                if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] == 0) {
+                    $upload_dir = 'public/uploads/users/';
+                    if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
+                    
+                    $filename = time() . '_' . basename($_FILES['avatar']['name']);
+                    $target_file = $upload_dir . $filename;
+                    $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
+                    
+                    $valid_extensions = array("jpg", "jpeg", "png", "gif");
+                    if (in_array($imageFileType, $valid_extensions)) {
+                        if (move_uploaded_file($_FILES['avatar']['tmp_name'], $target_file)) {
+                            $this->userModel->updateAvatar($user_id, $target_file);
+                        }
+                    }
+                }
 
-                if ($this->userModel->updateProfile($user_id, $fullname, $hashed_password)) {
-                    // Cập nhật lại session tên người dùng
+                $hashed_password = !empty($new_password) ? password_hash($new_password, PASSWORD_DEFAULT) : null;
+                $date_of_birth = !empty($date_of_birth) ? $date_of_birth : null;
+
+                if ($this->userModel->updateProfile($user_id, $fullname, $phone, $date_of_birth, $hashed_password)) {
                     $_SESSION['full_name'] = $fullname;
                     $message = "<div class='alert alert-success'><i class='fas fa-check-circle me-2'></i>Cập nhật thông tin thành công!</div>";
                 } else {

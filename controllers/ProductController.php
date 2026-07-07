@@ -31,6 +31,9 @@ class ProductController {
         if (!empty($params['keyword'])) {
             $pageTitle = "Kết quả tìm kiếm"; 
             $subTitle = "Từ khóa: '" . htmlspecialchars($params['keyword']) . "'";
+        } elseif ($params['filter'] == 'flash_sale') {
+            $pageTitle = "Flash Sale"; 
+            $subTitle = "Săn deal chớp nhoáng";
         } elseif ($params['filter'] == 'promotion') {
             $pageTitle = "Khuyến Mãi Hot"; 
             $subTitle = "Deal hời không thể bỏ lỡ";

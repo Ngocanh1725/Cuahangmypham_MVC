@@ -1,62 +1,108 @@
 <?php 
-// Truyền tiêu đề trang cho header.php
-$pageTitle = "Đăng nhập hệ thống - Glow Cosmetics"; 
+$pageTitle = "Đăng Nhập - Glow Beauty"; 
 include 'views/layout/header.php'; 
 ?>
+<style>
+    .auth-wrapper {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+        padding: 40px 0;
+    }
+    .auth-card {
+        border: none;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    }
+    .auth-bg {
+        background-image: url('https://images.unsplash.com/photo-1596462502278-27bf85033e5a?q=80&w=2071&auto=format&fit=crop');
+        background-size: cover;
+        background-position: center;
+        min-height: 500px;
+        position: relative;
+    }
+    .auth-bg::after {
+        content: '';
+        position: absolute;
+        top:0; left:0; right:0; bottom:0;
+        background: rgba(0,0,0,0.2);
+    }
+    .auth-content {
+        padding: 50px;
+        background: #fff;
+    }
+    .auth-title {
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 30px;
+    }
+    .form-control {
+        border-radius: 12px;
+        padding: 15px 20px;
+        border: 1px solid #eee;
+        background: #fafafa;
+        transition: all 0.3s ease;
+    }
+    .form-control:focus {
+        border-color: var(--brand-color);
+        box-shadow: 0 0 0 0.2rem rgba(255, 107, 107, 0.1);
+        background: #fff;
+    }
+    .btn-auth {
+        background: var(--brand-color);
+        color: white;
+        border-radius: 12px;
+        padding: 15px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+    }
+    .btn-auth:hover {
+        background: #e65c5c;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(255, 107, 107, 0.2);
+    }
+</style>
 
-<!-- Bọc form trong div min-vh-100 để căn giữa màn hình theo chiều dọc -->
-<div class="d-flex align-items-center justify-content-center min-vh-100 w-100" style="margin-top: -30px;">
+<div class="auth-wrapper">
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-md-6 col-lg-4">
-                <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
-                    
-                    <!-- Phần viền màu trang trí phía trên thẻ card -->
-                    <div style="height: 6px; background: linear-gradient(90deg, #be185d, #db2777);"></div>
-
-                    <div class="card-body p-5">
-                        <div class="text-center mb-4">
-                            <!-- Icon User nổi bật -->
-                            <i class="fas fa-user-circle fa-4x mb-3" style="color: var(--brand-dark, #be185d);"></i>
-                            <h3 class="fw-bold text-dark mb-1">Đăng Nhập</h3>
-                            <p class="text-muted small">Chào mừng bạn quay trở lại hệ thống!</p>
+            <div class="col-lg-10">
+                <div class="card auth-card">
+                    <div class="row g-0">
+                        <div class="col-md-6 auth-bg d-none d-md-block">
                         </div>
-                        
-                        <!-- Hiển thị thông báo lỗi từ Controller truyền sang -->
-                        <?php if(!empty($message)) echo $message; ?>
+                        <div class="col-md-6 auth-content d-flex align-items-center">
+                            <div class="w-100">
+                                <h3 class="auth-title text-center">Chào mừng trở lại!</h3>
+                                <p class="text-center text-muted mb-4">Vui lòng đăng nhập để tiếp tục mua sắm và nhận ưu đãi riêng.</p>
 
-                        <!-- Form gửi dữ liệu về UserController, action login -->
-                        <form method="POST" action="index.php?controller=user&action=login">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold text-secondary small text-uppercase">Email</label>
-                                <div class="input-group shadow-sm rounded-pill overflow-hidden">
-                                    <span class="input-group-text bg-white border-end-0 text-muted ps-4"><i class="fas fa-envelope"></i></span>
-                                    <input type="email" name="email" class="form-control border-start-0 py-2 shadow-none" required placeholder="Nhập email...">
-                                </div>
-                            </div>
-                            
-                            <div class="mb-4">
-                                <label class="form-label fw-bold text-secondary small text-uppercase">Mật khẩu</label>
-                                <div class="input-group shadow-sm rounded-pill overflow-hidden">
-                                    <span class="input-group-text bg-white border-end-0 text-muted ps-4"><i class="fas fa-lock"></i></span>
-                                    <input type="password" name="password" class="form-control border-start-0 py-2 shadow-none" required placeholder="******">
-                                </div>
-                            </div>
+                                <?php if(!empty($message)) echo $message; ?>
 
-                            <button type="submit" class="btn text-white w-100 py-3 fw-bold rounded-pill shadow-sm mb-4" style="background-color: var(--brand-main, #db2777); transition: all 0.3s;" onmouseover="this.style.backgroundColor='var(--brand-dark, #be185d)'" onmouseout="this.style.backgroundColor='var(--brand-main, #db2777)'">
-                                Đăng Nhập <i class="fas fa-arrow-right ms-2"></i>
-                            </button>
-                        </form>
-                        
-                        <div class="text-center mt-3 border-top pt-3">
-                            <span class="text-muted">Chưa có tài khoản?</span>
-                            <a href="index.php?controller=user&action=register" class="text-decoration-none fw-bold" style="color: var(--brand-main, #db2777);">Đăng ký ngay</a>
-                        </div>
-                        
-                        <div class="text-center mt-3">
-                            <a href="index.php" class="text-decoration-none text-muted" style="transition: color 0.2s;" onmouseover="this.style.color='#be185d'" onmouseout="this.style.color='#6c757d'">
-                                <i class="fas fa-arrow-left me-1"></i> Quay lại trang chủ
-                            </a>
+                                <form method="POST" action="index.php?controller=user&action=login">
+                                    <div class="mb-4">
+                                        <label class="form-label fw-bold small text-uppercase text-muted">Email</label>
+                                        <input type="email" name="email" class="form-control" placeholder="Nhập địa chỉ email của bạn" required>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label class="form-label fw-bold small text-uppercase text-muted d-flex justify-content-between">
+                                            <span>Mật khẩu</span>
+                                            <a href="#" class="text-brand text-decoration-none text-lowercase">Quên mật khẩu?</a>
+                                        </label>
+                                        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-auth w-100 mb-4">Đăng Nhập</button>
+                                    
+                                    <p class="text-center mb-0">
+                                        Bạn chưa có tài khoản? 
+                                        <a href="index.php?controller=user&action=register" class="text-brand fw-bold text-decoration-none border-bottom border-brand">Đăng ký ngay</a>
+                                    </p>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -64,5 +110,4 @@ include 'views/layout/header.php';
         </div>
     </div>
 </div>
-
 <?php include 'views/layout/footer.php'; ?>

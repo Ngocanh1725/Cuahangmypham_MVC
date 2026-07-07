@@ -91,7 +91,11 @@ $isQR = (isset($order['payment_method']) && $order['payment_method'] == 'Chuyể
                 <!-- Thông tin khách hàng -->
                 <div class="row mb-4 bg-light p-3 rounded-3 mx-0">
                     <div class="col-sm-6">
-                        <h6 class="fw-bold text-muted text-uppercase mb-2">Giao hàng đến</h6>
+                        <?php if(isset($order['delivery_method']) && $order['delivery_method'] == 'pickup'): ?>
+                            <h6 class="fw-bold text-muted text-uppercase mb-2"><i class="fas fa-store me-1"></i> Nhận tại cửa hàng</h6>
+                        <?php else: ?>
+                            <h6 class="fw-bold text-muted text-uppercase mb-2"><i class="fas fa-truck me-1"></i> Giao hàng đến</h6>
+                        <?php endif; ?>
                         <p class="mb-1"><strong>Khách hàng:</strong> <?php echo htmlspecialchars($order['customer_name']); ?></p>
                         <p class="mb-1"><strong>SĐT:</strong> <?php echo htmlspecialchars($order['customer_phone']); ?></p>
                         <p class="mb-0"><strong>Địa chỉ:</strong> <?php echo htmlspecialchars($order['customer_address']); ?></p>
@@ -131,15 +135,17 @@ $isQR = (isset($order['payment_method']) && $order['payment_method'] == 'Chuyể
                         <tbody>
                             <?php
                             $stt = 1;
+                            $subtotal = 0;
                             foreach ($orderDetails as $item) {
                                 $thanh_tien = $item['price'] * $item['quantity'];
+                                $subtotal += $thanh_tien;
                                 echo "
                                 <tr>
                                     <td class='text-muted fw-bold'>$stt</td>
                                     <td class='fw-bold text-dark'>{$item['name']}</td>
                                     <td class='text-center'>".number_format($item['price'])."đ</td>
                                     <td class='text-center fw-bold'>{$item['quantity']}</td>
-                                    <td class='text-end text-danger fw-bold'>".number_format($thanh_tien)."đ</td>
+                                    <td class='text-end text-dark fw-bold'>".number_format($thanh_tien)."đ</td>
                                 </tr>
                                 ";
                                 $stt++;
@@ -148,9 +154,38 @@ $isQR = (isset($order['payment_method']) && $order['payment_method'] == 'Chuyể
                         </tbody>
                         <tfoot class="table-light">
                             <tr>
+                                <td colspan="4" class="text-end text-muted py-2">Tạm tính:</td>
+                                <td class="text-end fw-bold"><?php echo number_format($subtotal); ?>đ</td>
+                            </tr>
+                            <?php if(isset($order['shipping_fee'])): ?>
+                            <tr>
+                                <td colspan="4" class="text-end text-muted py-2">Phí giao hàng:</td>
+                                <td class="text-end fw-bold"><?php echo $order['shipping_fee'] > 0 ? number_format($order['shipping_fee']).'đ' : 'Miễn phí'; ?></td>
+                            </tr>
+                            <?php endif; ?>
+                            <?php if(isset($order['discount_amount']) && $order['discount_amount'] > 0): ?>
+                            <tr>
+                                <td colspan="4" class="text-end text-success py-2">Giảm giá/Điểm:</td>
+                                <td class="text-end fw-bold text-success">-<?php echo number_format($order['discount_amount']); ?>đ</td>
+                            </tr>
+                            <?php endif; ?>
+                            <?php if(isset($order['vat_amount']) && $order['vat_amount'] > 0): ?>
+                            <tr>
+                                <td colspan="4" class="text-end text-muted py-2">Thuế VAT:</td>
+                                <td class="text-end fw-bold"><?php echo number_format($order['vat_amount']); ?>đ</td>
+                            </tr>
+                            <?php endif; ?>
+                            <tr class="border-top">
                                 <td colspan="4" class="text-end fw-bold py-3 fs-5">Tổng Thanh Toán:</td>
                                 <td class="text-end fs-4 fw-bold" style="color: var(--brand-dark, #be185d);"><?php echo number_format($order['total_price']); ?>đ</td>
                             </tr>
+                            <?php if(isset($order['points_earned']) && $order['points_earned'] > 0): ?>
+                            <tr>
+                                <td colspan="5" class="text-end text-warning py-2 small fw-bold">
+                                    <i class="fas fa-coins me-1"></i> Nhận được <?php echo number_format($order['points_earned']); ?> điểm tích lũy từ đơn hàng này!
+                                </td>
+                            </tr>
+                            <?php endif; ?>
                         </tfoot>
                     </table>
                 </div>

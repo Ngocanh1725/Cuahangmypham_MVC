@@ -60,7 +60,7 @@ class BrandController {
         $productModel = new ProductModel($this->db);
         
         $params = [
-            'brand'    => [$brandName], // Ép điều kiện lọc luôn luôn là hãng này
+            'brand'    => isset($brandInfo['id']) ? [$brandInfo['id']] : [-1], // Truyền ID của brand
             'price'    => isset($_GET['price']) ? $_GET['price'] : [],
             'category' => isset($_GET['category']) ? $_GET['category'] : [],
             'sort'     => isset($_GET['sort']) ? $_GET['sort'] : ''
