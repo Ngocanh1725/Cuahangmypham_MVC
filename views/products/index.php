@@ -191,13 +191,12 @@ $searchKeyword = isset($_GET['search']) ? $_GET['search'] : '';
                     <h5>Danh mục</h5>
                     <a href="index.php?controller=product&action=index" class="filter-link <?php echo empty($currentCategory) ? 'active' : ''; ?>">Tất cả sản phẩm</a>
                     <?php 
-                    // Mảng danh mục giả định (bạn cần thay bằng code lấy từ DB nếu có)
-                    $categories = ['Chăm sóc da', 'Trang điểm', 'Làm sạch', 'Phụ kiện'];
-                    foreach ($categories as $cat): ?>
-                        <a href="index.php?controller=product&action=index&category[]=<?php echo urlencode($cat); ?>" class="filter-link <?php echo ($currentCategory == $cat) ? 'active' : ''; ?>">
-                            <?php echo htmlspecialchars($cat); ?>
+                    if(isset($categoriesData) && is_array($categoriesData)): 
+                        foreach($categoriesData as $cat): ?>
+                        <a href="index.php?controller=product&action=index&category[]=<?php echo urlencode($cat['id']); ?>" class="filter-link <?php echo ($currentCategory == $cat['id']) ? 'active' : ''; ?>">
+                            <?php echo htmlspecialchars($cat['name']); ?> <span class="text-muted small">(<?php echo isset($catCounts[$cat['id']]) ? $catCounts[$cat['id']] : 0; ?>)</span>
                         </a>
-                    <?php endforeach; ?>
+                    <?php endforeach; endif; ?>
                 </div>
 
                 <!-- Thương hiệu -->
@@ -205,10 +204,10 @@ $searchKeyword = isset($_GET['search']) ? $_GET['search'] : '';
                     <h5>Thương hiệu</h5>
                     <a href="index.php?controller=product&action=index" class="filter-link <?php echo empty($currentBrand) ? 'active' : ''; ?>">Tất cả thương hiệu</a>
                     <?php 
-                    if(isset($brands) && is_array($brands)): 
-                        foreach($brands as $brand): ?>
-                            <a href="index.php?controller=product&action=index&brand=<?php echo urlencode($brand['id']); ?>" class="filter-link <?php echo ($currentBrand == $brand['id']) ? 'active' : ''; ?>">
-                                <?php echo htmlspecialchars($brand['name']); ?>
+                    if(isset($brandsData) && is_array($brandsData)): 
+                        foreach($brandsData as $brand): ?>
+                            <a href="index.php?controller=product&action=index&brand[]=<?php echo urlencode($brand['id']); ?>" class="filter-link <?php echo ($currentBrand == $brand['id']) ? 'active' : ''; ?>">
+                                <?php echo htmlspecialchars($brand['name']); ?> <span class="text-muted small">(<?php echo isset($brandCounts[$brand['id']]) ? $brandCounts[$brand['id']] : 0; ?>)</span>
                             </a>
                     <?php endforeach; endif; ?>
                 </div>
@@ -248,9 +247,13 @@ $searchKeyword = isset($_GET['search']) ? $_GET['search'] : '';
                             
                             <div class="product-footer">
                                 <span class="product-price"><?php echo number_format($item['price'], 0, ',', '.'); ?>đ</span>
-                                <a href="index.php?controller=cart&action=add&id=<?php echo $item['id']; ?>" class="add-to-cart-btn" title="Thêm vào giỏ">
-                                    <i class="fas fa-plus"></i>
-                                </a>
+                                <?php if(isset($item['stock']) && $item['stock'] <= 0): ?>
+                                    <span class="text-danger small fw-bold mt-2">Hết hàng</span>
+                                <?php else: ?>
+                                    <a href="index.php?controller=cart&action=add&id=<?php echo $item['id']; ?>" class="add-to-cart-btn" title="Thêm vào giỏ">
+                                        <i class="fas fa-plus"></i>
+                                    </a>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>

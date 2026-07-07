@@ -22,7 +22,11 @@ class ProductModel {
 
     // 2. Lấy thông tin 1 sản phẩm theo ID
     public function getProductById($id) {
-        $stmt = $this->conn->prepare("SELECT * FROM products WHERE id = ?");
+        $stmt = $this->conn->prepare("SELECT p.*, b.name as brand_name, c.name as category_name 
+                                      FROM products p 
+                                      LEFT JOIN brands b ON p.brand_id = b.id 
+                                      LEFT JOIN categories c ON p.category_id = c.id 
+                                      WHERE p.id = ?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -49,21 +53,20 @@ class ProductModel {
     }
 
     // 4. Lấy số lượng sản phẩm theo từng mục bộ lọc
-    public function getFilterCounts($column, $keywords) {
+    public function getFilterCounts($column, $ids) {
         $counts = [];
-        $allowedColumns = ['category', 'name'];
+        $allowedColumns = ['category_id', 'brand_id'];
         if (!in_array($column, $allowedColumns)) {
             return $counts;
         }
 
-        $sql = "SELECT COUNT(*) as total FROM products WHERE $column LIKE ?";
+        $sql = "SELECT COUNT(*) as total FROM products WHERE $column = ? AND status = 1";
         $stmt = $this->conn->prepare($sql);
 
-        foreach ($keywords as $kw) {
-            $term = "%" . $kw . "%";
-            $stmt->bind_param("s", $term);
+        foreach ($ids as $id) {
+            $stmt->bind_param("i", $id);
             $stmt->execute();
-            $counts[$kw] = $stmt->get_result()->fetch_assoc()['total'];
+            $counts[$id] = $stmt->get_result()->fetch_assoc()['total'];
         }
         
         $stmt->close();
@@ -74,14 +77,14 @@ class ProductModel {
     // CÁC HÀM MỚI CHO BƯỚC 6 (Dữ liệu động)
     // ---------------------------------------------------------
 
-    // 5. Lấy danh sách các danh mục duy nhất có trong CSDL
+    // 5. Lấy danh sách các danh mục
     public function getUniqueCategories() {
-        $sql = "SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != ''";
+        $sql = "SELECT id, name FROM categories ORDER BY name ASC";
         $result = $this->conn->query($sql);
         $categories = [];
         if ($result && $result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
-                $categories[] = $row['category'];
+                $categories[] = $row;
             }
         }
         return $categories;
@@ -105,10 +108,10 @@ class ProductModel {
     }
 
     // 7. Lấy sản phẩm liên quan cùng danh mục (Trang chi tiết)
-    public function getRelatedProducts($category, $exclude_id, $limit = 4) {
-        $sql = "SELECT * FROM products WHERE category = ? AND id != ? AND status = 1 ORDER BY id DESC LIMIT ?";
+    public function getRelatedProducts($category_id, $exclude_id, $limit = 4) {
+        $sql = "SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.category_id = ? AND p.id != ? AND p.status = 1 ORDER BY p.id DESC LIMIT ?";
         $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("sii", $category, $exclude_id, $limit);
+        $stmt->bind_param("iii", $category_id, $exclude_id, $limit);
         $stmt->execute();
         $result = $stmt->get_result();
         $products = [];
@@ -123,13 +126,17 @@ class ProductModel {
 
     // 8. XỬ LÝ BỘ LỌC NÂNG CAO (Trang Cửa Hàng)
     public function getProductsByAdvancedFilter($params) {
-        $sql = "SELECT * FROM products WHERE 1=1 AND status = 1";
+        $sql = "SELECT p.*, c.name as category_name, b.name as brand_name 
+                FROM products p 
+                LEFT JOIN categories c ON p.category_id = c.id 
+                LEFT JOIN brands b ON p.brand_id = b.id 
+                WHERE 1=1 AND p.status = 1";
         $bindParams = [];
         $types = "";
 
         // Lọc từ khóa
         if (!empty($params['keyword'])) {
-            $sql .= " AND (name LIKE ? OR category LIKE ?)";
+            $sql .= " AND (p.name LIKE ? OR c.name LIKE ?)";
             $types .= "ss";
             $searchParam = "%{$params['keyword']}%";
             $bindParams[] = $searchParam;
@@ -140,15 +147,15 @@ class ProductModel {
         if (!empty($params['filter']) && $params['filter'] != 'all') {
             $filter = $params['filter'];
             if ($filter == 'promotion') {
-                $sql .= " AND old_price > price";
+                $sql .= " AND p.old_price > p.price";
             } elseif ($filter == 'skincare') {
-                $sql .= " AND category LIKE '%Chăm sóc da%'";
+                $sql .= " AND c.name LIKE '%Chăm sóc da%'";
             } elseif ($filter == 'makeup') {
-                $sql .= " AND category LIKE '%Trang điểm%'";
+                $sql .= " AND c.name LIKE '%Trang điểm%'";
             } elseif ($filter == 'perfume') {
-                $sql .= " AND category LIKE '%Nước hoa%'";
+                $sql .= " AND c.name LIKE '%Nước hoa%'";
             } elseif ($filter == 'hairbody') {
-                $sql .= " AND (category LIKE '%Tóc%' OR category LIKE '%Cơ thể%')";
+                $sql .= " AND (c.name LIKE '%Tóc%' OR c.name LIKE '%Cơ thể%')";
             }
         }
 
@@ -176,22 +183,22 @@ class ProductModel {
         if (!empty($params['category']) && is_array($params['category'])) {
             $catConditions = [];
             foreach ($params['category'] as $cat) {
-                $catConditions[] = "category LIKE ?";
-                $types .= "s";
-                $bindParams[] = "%" . $cat . "%";
+                $catConditions[] = "p.category_id = ?";
+                $types .= "i";
+                $bindParams[] = intval($cat);
             }
             if (!empty($catConditions)) {
                 $sql .= " AND (" . implode(" OR ", $catConditions) . ")";
             }
         }
 
-        // Lọc thương hiệu (tương đối qua tên SP)
+        // Lọc thương hiệu
         if (!empty($params['brand']) && is_array($params['brand'])) {
             $brandConditions = [];
-            foreach ($params['brand'] as $brand) {
-                $brandConditions[] = "name LIKE ?";
-                $types .= "s";
-                $bindParams[] = "%" . $brand . "%";
+            foreach ($params['brand'] as $brand_id) {
+                $brandConditions[] = "p.brand_id = ?";
+                $types .= "i";
+                $bindParams[] = intval($brand_id);
             }
             if (!empty($brandConditions)) {
                 $sql .= " AND (" . implode(" OR ", $brandConditions) . ")";
@@ -201,16 +208,16 @@ class ProductModel {
         // Sắp xếp
         if (!empty($params['sort'])) {
             if ($params['sort'] == 'price_asc') {
-                $sql .= " ORDER BY price ASC";
+                $sql .= " ORDER BY p.price ASC";
             } elseif ($params['sort'] == 'price_desc') {
-                $sql .= " ORDER BY price DESC";
+                $sql .= " ORDER BY p.price DESC";
             } elseif ($params['sort'] == 'newest') {
-                $sql .= " ORDER BY id DESC";
+                $sql .= " ORDER BY p.id DESC";
             } else {
-                $sql .= " ORDER BY id DESC";
+                $sql .= " ORDER BY p.id DESC";
             }
         } else {
-            $sql .= " ORDER BY id DESC"; 
+            $sql .= " ORDER BY p.id DESC"; 
             if (!empty($params['filter']) && $params['filter'] == 'new') {
                 $sql .= " LIMIT 20";
             }

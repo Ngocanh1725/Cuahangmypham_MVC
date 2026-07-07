@@ -39,12 +39,13 @@ include 'views/layout/header.php';
                                 <div class="row mb-3">
                                     <div class="col-md-4">
                                         <label class="form-label fw-bold">Danh mục</label>
-                                        <select name="category" class="form-select">
-                                            <option value="Chăm sóc da">Chăm sóc da</option>
-                                            <option value="Trang điểm">Trang điểm</option>
-                                            <option value="Nước hoa">Nước hoa</option>
-                                            <option value="Cơ thể & Tóc">Cơ thể & Tóc</option>
-                                            <option value="Son môi">Son môi</option>
+                                        <select name="category_id" class="form-select" required>
+                                            <option value="">-- Chọn danh mục --</option>
+                                            <?php if(!empty($categoriesList)): ?>
+                                                <?php foreach($categoriesList as $c): ?>
+                                                    <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['name']); ?></option>
+                                                <?php endforeach; ?>
+                                            <?php endif; ?>
                                         </select>
                                     </div>
                                     <div class="col-md-4">

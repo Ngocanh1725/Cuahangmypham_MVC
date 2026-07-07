@@ -43,12 +43,13 @@ include 'views/layout/header.php';
                                 <div class="row mb-3">
                                     <div class="col-md-4">
                                         <label class="form-label fw-bold">Danh mục</label>
-                                        <select name="category" class="form-select">
-                                            <option value="Chăm sóc da" <?php echo ($product['category'] == 'Chăm sóc da') ? 'selected' : ''; ?>>Chăm sóc da</option>
-                                            <option value="Trang điểm" <?php echo ($product['category'] == 'Trang điểm') ? 'selected' : ''; ?>>Trang điểm</option>
-                                            <option value="Nước hoa" <?php echo ($product['category'] == 'Nước hoa') ? 'selected' : ''; ?>>Nước hoa</option>
-                                            <option value="Cơ thể & Tóc" <?php echo ($product['category'] == 'Cơ thể & Tóc') ? 'selected' : ''; ?>>Cơ thể & Tóc</option>
-                                            <option value="Son môi" <?php echo ($product['category'] == 'Son môi') ? 'selected' : ''; ?>>Son môi</option>
+                                        <select name="category_id" class="form-select" required>
+                                            <option value="">-- Chọn danh mục --</option>
+                                            <?php if(!empty($categoriesList)): ?>
+                                                <?php foreach($categoriesList as $c): ?>
+                                                    <option value="<?php echo $c['id']; ?>" <?php echo (isset($product['category_id']) && $product['category_id'] == $c['id']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($c['name']); ?></option>
+                                                <?php endforeach; ?>
+                                            <?php endif; ?>
                                         </select>
                                     </div>
                                     <div class="col-md-4">

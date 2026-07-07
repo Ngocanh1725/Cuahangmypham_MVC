@@ -55,10 +55,26 @@ class AdminModel {
     }
 
     // ---------------------------------------------------------
-    // SẢN PHẨM (PRODUCTS)
+    // SẢN PHẨM (PRODUCTS) & DANH MỤC (CATEGORIES)
     // ---------------------------------------------------------
-    public function getAllProducts($search = '', $category = '', $brand_id = '') {
-        $sql = "SELECT p.*, b.name as brand_name FROM products p LEFT JOIN brands b ON p.brand_id = b.id WHERE 1=1";
+    public function getAllCategories() {
+        $sql = "SELECT * FROM categories ORDER BY name ASC";
+        $result = $this->conn->query($sql);
+        $categories = [];
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $categories[] = $row;
+            }
+        }
+        return $categories;
+    }
+
+    public function getAllProducts($search = '', $category_id = '', $brand_id = '') {
+        $sql = "SELECT p.*, b.name as brand_name, c.name as category_name 
+                FROM products p 
+                LEFT JOIN brands b ON p.brand_id = b.id 
+                LEFT JOIN categories c ON p.category_id = c.id 
+                WHERE 1=1";
         $types = "";
         $params = [];
 
@@ -68,10 +84,10 @@ class AdminModel {
             $params[] = "%$search%";
             $params[] = intval($search);
         }
-        if (!empty($category)) {
-            $sql .= " AND p.category = ?";
-            $types .= "s";
-            $params[] = $category;
+        if (!empty($category_id)) {
+            $sql .= " AND p.category_id = ?";
+            $types .= "i";
+            $params[] = intval($category_id);
         }
         if (!empty($brand_id)) {
             $sql .= " AND p.brand_id = ?";
@@ -98,9 +114,9 @@ class AdminModel {
         return $products;
     }
 
-    public function addProduct($name, $price, $category, $status, $image, $stock, $brand_id = null) {
-        $stmt = $this->conn->prepare("INSERT INTO products (name, price, category, status, image, stock, brand_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sdsisii", $name, $price, $category, $status, $image, $stock, $brand_id);
+    public function addProduct($name, $price, $category_id, $status, $image, $stock, $brand_id = null) {
+        $stmt = $this->conn->prepare("INSERT INTO products (name, price, category_id, status, image, stock, brand_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("sdiisii", $name, $price, $category_id, $status, $image, $stock, $brand_id);
         $result = $stmt->execute();
         $stmt->close();
         return $result;
@@ -116,9 +132,9 @@ class AdminModel {
         return $product;
     }
 
-    public function updateProduct($id, $name, $price, $category, $status, $image, $stock, $brand_id = null) {
-        $stmt = $this->conn->prepare("UPDATE products SET name=?, price=?, category=?, status=?, image=?, stock=?, brand_id=? WHERE id=?");
-        $stmt->bind_param("sdsisiii", $name, $price, $category, $status, $image, $stock, $brand_id, $id);
+    public function updateProduct($id, $name, $price, $category_id, $status, $image, $stock, $brand_id = null) {
+        $stmt = $this->conn->prepare("UPDATE products SET name=?, price=?, category_id=?, status=?, image=?, stock=?, brand_id=? WHERE id=?");
+        $stmt->bind_param("sdiisiii", $name, $price, $category_id, $status, $image, $stock, $brand_id, $id);
         $result = $stmt->execute();
         $stmt->close();
         return $result;
@@ -266,6 +282,14 @@ class AdminModel {
     public function updateOrderStatus($id, $status) {
         $stmt = $this->conn->prepare("UPDATE orders SET status=? WHERE id=?");
         $stmt->bind_param("si", $status, $id);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    public function increaseStock($product_id, $qty) {
+        $stmt = $this->conn->prepare("UPDATE products SET stock = stock + ? WHERE id = ?");
+        $stmt->bind_param("ii", $qty, $product_id);
         $result = $stmt->execute();
         $stmt->close();
         return $result;

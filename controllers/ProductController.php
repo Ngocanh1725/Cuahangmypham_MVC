@@ -54,22 +54,18 @@ class ProductController {
         // 3. Lấy Dữ Liệu Động (Cho Bộ lọc & Trang Chủ)
         
         // Cập nhật danh mục động
-        $filterCategories = $this->productModel->getUniqueCategories();
+        $categoriesData = $this->productModel->getUniqueCategories();
+        $filterCategoryIds = array_column($categoriesData, 'id');
         
         // Cập nhật thương hiệu động
         require_once 'models/BrandModel.php';
         $brandModel = new BrandModel($this->db);
         $brandsData = $brandModel->getAllBrands();
-        $filterBrands = [];
-        if (!empty($brandsData)) {
-            foreach($brandsData as $b) { 
-                $filterBrands[] = $b['name']; 
-            }
-        }
+        $filterBrandIds = array_column($brandsData, 'id');
 
         // Đếm số lượng sản phẩm cho bộ lọc
-        $catCounts = $this->productModel->getFilterCounts('category', $filterCategories);
-        $brandCounts = $this->productModel->getFilterCounts('name', $filterBrands); 
+        $catCounts = $this->productModel->getFilterCounts('category_id', $filterCategoryIds);
+        $brandCounts = $this->productModel->getFilterCounts('brand_id', $filterBrandIds); 
 
         // Lấy Banner
         $banners = $this->productModel->getActiveBanners();
@@ -105,7 +101,7 @@ class ProductController {
         $pageTitle = $product['name'] . " - Glow Cosmetics";
         
         // Lấy sản phẩm liên quan
-        $relatedProducts = $this->productModel->getRelatedProducts($product['category'], $id, 4);
+        $relatedProducts = $this->productModel->getRelatedProducts($product['category_id'], $id, 4);
         
         // Gọi View
         require_once 'views/products/detail.php';

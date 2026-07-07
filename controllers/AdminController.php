@@ -48,11 +48,12 @@ class AdminController {
     public function products() {
         $this->checkAuth();
         $search = $_GET['search'] ?? '';
-        $category = $_GET['category'] ?? '';
+        $category_id = $_GET['category'] ?? '';
         $brand_id = $_GET['brand_id'] ?? '';
 
-        $products = $this->adminModel->getAllProducts($search, $category, $brand_id);
+        $products = $this->adminModel->getAllProducts($search, $category_id, $brand_id);
         $brandsList = $this->adminModel->getAllBrands();
+        $categoriesList = $this->adminModel->getAllCategories();
         $newOrders = $this->adminModel->getNewOrdersCount();
         require_once 'views/admin/products.php';
     }
@@ -64,7 +65,7 @@ class AdminController {
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $name = $_POST['name'] ?? '';
             $price = $_POST['price'] ?? 0;
-            $category = $_POST['category'] ?? '';
+            $category_id = !empty($_POST['category_id']) ? intval($_POST['category_id']) : null;
             $brand_id = !empty($_POST['brand_id']) ? intval($_POST['brand_id']) : null;
             $status = isset($_POST['status']) ? intval($_POST['status']) : 1;
             $stock = isset($_POST['stock']) ? intval($_POST['stock']) : 0;
@@ -80,7 +81,7 @@ class AdminController {
             }
 
             if (empty($message)) {
-                if ($this->adminModel->addProduct($name, $price, $category, $status, $imagePath, $stock, $brand_id)) {
+                if ($this->adminModel->addProduct($name, $price, $category_id, $status, $imagePath, $stock, $brand_id)) {
                     header("Location: index.php?controller=admin&action=products");
                     exit();
                 } else {
@@ -90,6 +91,7 @@ class AdminController {
         }
         $newOrders = $this->adminModel->getNewOrdersCount();
         $brandsList = $this->adminModel->getAllBrands();
+        $categoriesList = $this->adminModel->getAllCategories();
         require_once 'views/admin/add_product.php';
     }
 
@@ -104,7 +106,7 @@ class AdminController {
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $name = $_POST['name'] ?? '';
             $price = $_POST['price'] ?? 0;
-            $category = $_POST['category'] ?? '';
+            $category_id = !empty($_POST['category_id']) ? intval($_POST['category_id']) : null;
             $brand_id = !empty($_POST['brand_id']) ? intval($_POST['brand_id']) : null;
             $status = isset($_POST['status']) ? intval($_POST['status']) : 1;
             $stock = isset($_POST['stock']) ? intval($_POST['stock']) : 0;
@@ -121,7 +123,7 @@ class AdminController {
             }
 
             if (empty($message)) {
-                if ($this->adminModel->updateProduct($id, $name, $price, $category, $status, $imagePath, $stock, $brand_id)) {
+                if ($this->adminModel->updateProduct($id, $name, $price, $category_id, $status, $imagePath, $stock, $brand_id)) {
                     header("Location: index.php?controller=admin&action=products");
                     exit();
                 } else {
@@ -131,6 +133,7 @@ class AdminController {
         }
         $newOrders = $this->adminModel->getNewOrdersCount();
         $brandsList = $this->adminModel->getAllBrands();
+        $categoriesList = $this->adminModel->getAllCategories();
         require_once 'views/admin/edit_product.php';
     }
 
@@ -427,6 +430,13 @@ class AdminController {
         $status = isset($_GET['status']) ? $_GET['status'] : '';
         
         if ($id > 0 && !empty($status)) {
+            $order = $this->adminModel->getOrderById($id);
+            if ($order && $order['status'] !== 'Đã hủy' && $status === 'Đã hủy') {
+                $orderDetails = $this->adminModel->getOrderDetails($id);
+                foreach ($orderDetails as $item) {
+                    $this->adminModel->increaseStock($item['product_id'], $item['quantity']);
+                }
+            }
             $this->adminModel->updateOrderStatus($id, $status);
         }
         header("Location: index.php?controller=admin&action=orderDetail&id=" . $id);

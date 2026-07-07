@@ -34,6 +34,15 @@ class OrderModel {
         return $result;
     }
 
+    // Trừ số lượng tồn kho
+    public function decreaseStock($product_id, $qty) {
+        $stmt = $this->conn->prepare("UPDATE products SET stock = stock - ? WHERE id = ?");
+        $stmt->bind_param("ii", $qty, $product_id);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
     // Lấy thông tin chung của 1 đơn hàng
     public function getOrderById($id) {
         $stmt = $this->conn->prepare("SELECT * FROM orders WHERE id = ?");

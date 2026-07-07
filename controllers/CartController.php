@@ -39,11 +39,27 @@ class CartController {
     // 2. Thêm vào giỏ
     public function add() {
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-        if ($id > 0) {
-            if (isset($_SESSION['cart'][$id])) {
-                $_SESSION['cart'][$id]++;
-            } else {
-                $_SESSION['cart'][$id] = 1;
+        $qtyToAdd = isset($_POST['qty']) ? intval($_POST['qty']) : 1;
+
+        if ($id > 0 && $qtyToAdd > 0) {
+            $sql = "SELECT stock, name FROM products WHERE id = ?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $product = $result->fetch_assoc();
+            $stmt->close();
+
+            if ($product) {
+                $currentQty = isset($_SESSION['cart'][$id]) ? $_SESSION['cart'][$id] : 0;
+                $newQty = $currentQty + $qtyToAdd;
+
+                if ($newQty > $product['stock']) {
+                    $_SESSION['cart_error'] = "Không thể thêm '$product[name]'. Số lượng tối đa có thể mua là $product[stock].";
+                } else {
+                    $_SESSION['cart'][$id] = $newQty;
+                    $_SESSION['cart_success'] = "Đã thêm '$product[name]' vào giỏ hàng.";
+                }
             }
         }
         $referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : 'index.php';
@@ -55,10 +71,27 @@ class CartController {
     public function update() {
         if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['qty'])) {
             foreach ($_POST['qty'] as $id => $quantity) {
+                $quantity = intval($quantity);
                 if ($quantity <= 0) {
                     unset($_SESSION['cart'][$id]);
                 } else {
-                    $_SESSION['cart'][$id] = intval($quantity);
+                    $sql = "SELECT stock, name FROM products WHERE id = ?";
+                    $stmt = $this->conn->prepare($sql);
+                    $stmt->bind_param("i", $id);
+                    $stmt->execute();
+                    $product = $stmt->get_result()->fetch_assoc();
+                    $stmt->close();
+
+                    if ($product) {
+                        if ($quantity > $product['stock']) {
+                            $_SESSION['cart'][$id] = $product['stock'];
+                            $_SESSION['cart_error'] = "Sản phẩm '$product[name]' chỉ còn $product[stock] trong kho. Đã tự động cập nhật.";
+                        } else {
+                            $_SESSION['cart'][$id] = $quantity;
+                        }
+                    } else {
+                        unset($_SESSION['cart'][$id]);
+                    }
                 }
             }
         }
@@ -114,14 +147,23 @@ class CartController {
             $payment_method = $_POST['payment_method'] ?? 'COD'; // Lấy phương thức thanh toán
             $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
 
-            // 1. Tạo đơn hàng chung
-            $order_id = $orderModel->createOrder($user_id, $name, $phone, $address, $totalPrice, $payment_method);
-            
-            if ($order_id) {
-                // 2. Tạo chi tiết đơn hàng cho từng món
+            try {
+                $this->conn->begin_transaction();
+
+                // 1. Tạo đơn hàng chung
+                $order_id = $orderModel->createOrder($user_id, $name, $phone, $address, $totalPrice, $payment_method);
+                
+                if (!$order_id) {
+                    throw new Exception("Hệ thống đang bận, không thể tạo đơn hàng lúc này!");
+                }
+                
+                // 2. Tạo chi tiết đơn hàng cho từng món & Trừ tồn kho
                 foreach ($cartItems as $item) {
                     $orderModel->createOrderDetail($order_id, $item['id'], $item['price'], $item['qty']);
+                    $orderModel->decreaseStock($item['id'], $item['qty']);
                 }
+                
+                $this->conn->commit();
                 
                 // 3. Xóa giỏ hàng vì đã đặt thành công
                 unset($_SESSION['cart']);
@@ -129,8 +171,10 @@ class CartController {
                 // 4. Chuyển tới trang Hóa Đơn
                 header("Location: index.php?controller=cart&action=invoice&id=" . $order_id);
                 exit();
-            } else {
-                $message = "<div class='alert alert-danger'>Hệ thống đang bận, không thể tạo đơn hàng lúc này!</div>";
+                
+            } catch (Exception $e) {
+                $this->conn->rollback();
+                $message = "<div class='alert alert-danger'>" . $e->getMessage() . "</div>";
             }
         }
 

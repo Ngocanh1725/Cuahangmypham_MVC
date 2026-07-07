@@ -27,6 +27,34 @@ class UserModel {
         return false; 
     }
 
+    // Kiểm tra email tồn tại
+    public function checkEmailExists($email) {
+        $stmt = $this->conn->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $exists = ($result && $result->num_rows > 0);
+        $stmt->close();
+        return $exists;
+    }
+
+    // Đăng ký tài khoản mới
+    public function register($fullname, $email, $password) {
+        if ($this->checkEmailExists($email)) {
+            return false; // Email đã tồn tại
+        }
+        
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        $role = 0; // 0 = Customer
+        
+        $stmt = $this->conn->prepare("INSERT INTO users (full_name, email, password, role) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("sssi", $fullname, $email, $hashed_password, $role);
+        $result = $stmt->execute();
+        $stmt->close();
+        
+        return $result;
+    }
+
     // [MỚI] Lấy thông tin user theo ID
     public function getUserById($id) {
         $stmt = $this->conn->prepare("SELECT id, full_name, email, role FROM users WHERE id = ?");

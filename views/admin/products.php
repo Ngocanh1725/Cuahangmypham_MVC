@@ -33,13 +33,12 @@ include 'views/layout/header.php';
                         <div class="col-md-3">
                             <select name="category" class="form-select">
                                 <option value="">-- Tất cả danh mục --</option>
-                                <?php 
-                                $categories = ["Chăm sóc da", "Trang điểm", "Nước hoa", "Cơ thể & Tóc", "Son môi"];
-                                foreach($categories as $cat) {
-                                    $selected = (isset($_GET['category']) && $_GET['category'] == $cat) ? 'selected' : '';
-                                    echo "<option value=\"$cat\" $selected>$cat</option>";
-                                }
-                                ?>
+                                <?php if(!empty($categoriesList)): ?>
+                                    <?php foreach($categoriesList as $c): ?>
+                                        <?php $selected = (isset($_GET['category']) && $_GET['category'] == $c['id']) ? 'selected' : ''; ?>
+                                        <option value="<?php echo $c['id']; ?>" <?php echo $selected; ?>><?php echo htmlspecialchars($c['name']); ?></option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -83,9 +82,10 @@ include 'views/layout/header.php';
                                     // --- XỬ LÝ DỮ LIỆU ---
                                     $id = $row["id"];
                                     $name = htmlspecialchars($row["name"]);
-                                    $category = isset($row["category"]) ? htmlspecialchars($row["category"]) : "Chưa phân loại";
+                                    $category = isset($row["category_name"]) && $row["category_name"] ? htmlspecialchars($row["category_name"]) : "Chưa phân loại";
                                     $price = isset($row["price"]) ? number_format($row["price"]) : "0";
                                     $status = isset($row["status"]) ? $row["status"] : 1;
+                                    $stock = isset($row['stock']) ? intval($row['stock']) : 0;
                                     
                                     // --- XỬ LÝ HIỂN THỊ ẢNH ---
                                     $imgSrc = isset($row['image']) ? $row['image'] : '';
@@ -111,7 +111,14 @@ include 'views/layout/header.php';
                                         <td><span class='badge bg-secondary text-white'><?php echo isset($row['brand_name']) && $row['brand_name'] ? htmlspecialchars($row['brand_name']) : 'Khác'; ?></span></td>
                                         <td class='fw-bold' style='color: var(--brand-dark)'><?php echo $price; ?>đ</td>
                                         <!-- HIỂN THỊ DỮ LIỆU TỒN KHO -->
-                                        <td class='fw-bold text-center text-primary'><?php echo isset($row['stock']) ? $row['stock'] : 0; ?></td>
+                                        <td class='fw-bold text-center <?php echo $stock < 5 ? "text-danger" : "text-primary"; ?>'>
+                                            <?php echo $stock; ?>
+                                            <?php if($stock < 5 && $stock > 0): ?>
+                                                <br><small class="text-danger fw-normal" style="font-size:0.75rem;"><i class="fas fa-exclamation-triangle"></i> Sắp hết</small>
+                                            <?php elseif($stock == 0): ?>
+                                                <br><small class="text-danger fw-normal" style="font-size:0.75rem;">Hết hàng</small>
+                                            <?php endif; ?>
+                                        </td>
                                         <td><?php echo $statusBadge; ?></td>
                                         <td class='text-end pe-4'>
                                             <a href='index.php?controller=admin&action=editProduct&id=<?php echo $id; ?>' class='btn btn-sm btn-light text-primary me-2 rounded-circle' title='Sửa'>

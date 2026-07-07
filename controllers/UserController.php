@@ -28,6 +28,11 @@ class UserController {
 
         $message = "";
         
+        if (isset($_SESSION['register_success'])) {
+            $message = "<div class='alert alert-success text-center'>" . $_SESSION['register_success'] . "</div>";
+            unset($_SESSION['register_success']);
+        }
+        
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $email = $_POST['email'] ?? '';
             $password = $_POST['password'] ?? '';
@@ -51,6 +56,39 @@ class UserController {
         }
 
         require_once 'views/users/login.php';
+    }
+
+    // --- ACTION ĐĂNG KÝ ---
+    public function register() {
+        if (isset($_SESSION['user_id'])) {
+            header("Location: index.php");
+            exit();
+        }
+
+        $message = "";
+
+        if ($_SERVER["REQUEST_METHOD"] == "POST") {
+            $fullname = trim($_POST['fullname'] ?? '');
+            $email = trim($_POST['email'] ?? '');
+            $password = $_POST['password'] ?? '';
+            $confirm_password = $_POST['confirm_password'] ?? '';
+
+            if (empty($fullname) || empty($email) || empty($password)) {
+                $message = "<div class='alert alert-danger text-center'>Vui lòng điền đầy đủ thông tin!</div>";
+            } elseif ($password !== $confirm_password) {
+                $message = "<div class='alert alert-danger text-center'>Mật khẩu xác nhận không khớp!</div>";
+            } else {
+                if ($this->userModel->register($fullname, $email, $password)) {
+                    $_SESSION['register_success'] = "Đăng ký thành công! Vui lòng đăng nhập.";
+                    header("Location: index.php?controller=user&action=login");
+                    exit();
+                } else {
+                    $message = "<div class='alert alert-danger text-center'>Email đã được sử dụng! Vui lòng chọn email khác.</div>";
+                }
+            }
+        }
+
+        require_once 'views/users/register.php';
     }
 
     // --- ACTION ĐĂNG XUẤT ---

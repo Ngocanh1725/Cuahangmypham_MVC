@@ -38,7 +38,7 @@ include 'views/layout/navbar.php';
                                 if($row['status'] == 'Hoàn thành') $statusClass = 'bg-success';
                                 if($row['status'] == 'Đang giao') $statusClass = 'bg-primary';
                                 if($row['status'] == 'Chờ xử lý') $statusClass = 'bg-warning text-dark';
-                                if($row['status'] == 'Hủy') $statusClass = 'bg-danger';
+                                if($row['status'] == 'Đã hủy') $statusClass = 'bg-danger';
                             ?>
                                 <tr>
                                     <td class="ps-4 fw-bold text-muted">#ORD-<?php echo str_pad($row['id'], 4, '0', STR_PAD_LEFT); ?></td>

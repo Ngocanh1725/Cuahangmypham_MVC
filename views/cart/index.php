@@ -8,6 +8,19 @@ include 'views/layout/navbar.php';
 <div class="container py-5">
     <h2 class="fw-bold mb-4" style="color: var(--brand-dark, #be185d);">Giỏ Hàng Của Bạn</h2>
 
+    <?php if (isset($_SESSION['cart_error'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong><i class="fas fa-exclamation-triangle me-2"></i>Lỗi!</strong> <?php echo htmlspecialchars($_SESSION['cart_error']); unset($_SESSION['cart_error']); ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <?php endif; ?>
+    <?php if (isset($_SESSION['cart_success'])): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong><i class="fas fa-check-circle me-2"></i>Thành công!</strong> <?php echo htmlspecialchars($_SESSION['cart_success']); unset($_SESSION['cart_success']); ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <?php endif; ?>
+
     <?php if (empty($cartItems)): ?>
         <div class="text-center bg-white p-5 rounded-4 shadow-sm border">
             <i class="fas fa-shopping-cart fa-4x text-muted mb-3"></i>

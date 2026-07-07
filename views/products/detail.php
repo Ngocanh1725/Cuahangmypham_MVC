@@ -128,7 +128,7 @@ $imgUrl = (!empty($product['image']) && $product['image'] !== 'https://via.place
           : 'https://via.placeholder.com/600x600?text=Beauty+Product';
           
 $isSale = (isset($product['old_price']) && $product['old_price'] > $product['price']);
-$category = $product['category'] ?? 'Sản phẩm làm đẹp';
+$category = isset($product['category_name']) && $product['category_name'] ? $product['category_name'] : 'Sản phẩm làm đẹp';
 ?>
 
 <div class="container py-5">
@@ -192,29 +192,31 @@ $category = $product['category'] ?? 'Sản phẩm làm đẹp';
             </p>
 
             <form action="index.php?controller=cart&action=add&id=<?php echo $product['id']; ?>" method="POST" id="addToCartForm">
-                <h6 class="fw-bold mb-3 text-dark">Số lượng</h6>
-                <div class="quantity-selector">
-                    <button type="button" class="qty-btn" onclick="decreaseQty()"><i class="fas fa-minus"></i></button>
-                    <input type="number" name="qty" id="qtyInput" class="qty-input" value="1" min="1" max="<?php echo isset($product['stock']) && $product['stock'] > 0 ? $product['stock'] : 10; ?>">
-                    <button type="button" class="qty-btn" onclick="increaseQty()"><i class="fas fa-plus"></i></button>
-                </div>
-                
-                <div class="mt-2 mb-4 text-muted small">
-                    <?php if (isset($product['stock']) && $product['stock'] > 0): ?>
+                <?php if (isset($product['stock']) && $product['stock'] > 0): ?>
+                    <h6 class="fw-bold mb-3 text-dark">Số lượng</h6>
+                    <div class="quantity-selector">
+                        <button type="button" class="qty-btn" onclick="decreaseQty()"><i class="fas fa-minus"></i></button>
+                        <input type="number" name="qty" id="qtyInput" class="qty-input" value="1" min="1" max="<?php echo $product['stock']; ?>">
+                        <button type="button" class="qty-btn" onclick="increaseQty()"><i class="fas fa-plus"></i></button>
+                    </div>
+                    
+                    <div class="mt-2 mb-4 text-muted small">
                         Kho còn: <strong class="text-success"><?php echo $product['stock']; ?> sản phẩm</strong>
-                    <?php else: ?>
-                        <strong class="text-success"><i class="fas fa-check"></i> Sẵn sàng giao hàng</strong>
-                    <?php endif; ?>
-                </div>
+                    </div>
 
-                <div class="btn-action-group">
-                    <button type="submit" class="btn btn-add-cart-outline">
-                        <i class="fas fa-cart-plus me-2"></i> Thêm vào giỏ
-                    </button>
-                    <button type="button" class="btn btn-buy-now" onclick="buyNow()">
-                        Mua Ngay
-                    </button>
-                </div>
+                    <div class="btn-action-group">
+                        <button type="submit" class="btn btn-add-cart-outline">
+                            <i class="fas fa-cart-plus me-2"></i> Thêm vào giỏ
+                        </button>
+                        <button type="button" class="btn btn-buy-now" onclick="buyNow()">
+                            Mua Ngay
+                        </button>
+                    </div>
+                <?php else: ?>
+                    <div class="alert alert-danger mt-3 d-inline-block fw-bold py-2 px-4 rounded-pill">
+                        <i class="fas fa-exclamation-circle me-2"></i> Sản phẩm hiện đang hết hàng
+                    </div>
+                <?php endif; ?>
             </form>
 
             <div class="trust-badges">
@@ -331,7 +333,7 @@ $category = $product['category'] ?? 'Sản phẩm làm đẹp';
                             </a>
                         </div>
                         <div class="text-center mt-3 px-1">
-                            <p class="product-brand-name text-uppercase text-muted small mb-1"><?php echo htmlspecialchars($rel['category']); ?></p>
+                            <p class="product-brand-name text-uppercase text-muted small mb-1"><?php echo isset($rel['category_name']) ? htmlspecialchars($rel['category_name']) : 'Sản phẩm'; ?></p>
                             <h3 class="product-title-clamp" style="font-size: 1.1rem;">
                                 <a href="index.php?controller=product&action=detail&id=<?php echo $rel['id']; ?>" class="text-decoration-none" style="color: inherit;">
                                     <?php echo htmlspecialchars($rel['name']); ?>
