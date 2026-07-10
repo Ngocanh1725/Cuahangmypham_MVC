@@ -1,228 +1,287 @@
 /**
  * ============================================================
- * CHECKOUT.JS - Logic thanh toán realtime
- * Glow Cosmetics - Cửa hàng Mỹ Phẩm MVC
+ * CHECKOUT.JS — Gọi Backend tính toán, cập nhật giao diện
+ * Toàn bộ logic tính toán nằm ở CartController@ajaxCalculateTotal
+ * File JS này CHỈ gửi request & hiển thị kết quả từ server.
  * ============================================================
  */
 
-// Biến lưu trạng thái voucher
-let currentVoucherDiscount = 0;
-let currentVoucherCode = '';
+// Biến lưu mã coupon đang áp dụng
+let currentCouponCode = '';
 
-// ============================================================
-// 1. ÁP DỤNG VOUCHER (AJAX)
-// ============================================================
-function applyVoucher() {
-    const input = document.getElementById('voucherInput');
-    const msgEl = document.getElementById('voucherMessage');
-    const btn = document.getElementById('btnApplyVoucher');
-    const code = input.value.trim().toUpperCase();
+// ==================================
+// 1. TOGGLE PHƯƠNG THỨC VẬN CHUYỂN
+// ==================================
+function toggleDelivery(method) {
+    const lblShipping = document.getElementById('lblShipping');
+    const lblPickup   = document.getElementById('lblPickup');
+    const pickupSec   = document.getElementById('pickupSection');
+    const addressFields = document.querySelectorAll(
+        'input[name="customer_city"], input[name="customer_district"], input[name="customer_ward"], input[name="customer_street"]'
+    );
+
+    lblShipping.classList.remove('active');
+    lblPickup.classList.remove('active');
+
+    if (method === 'shipping') {
+        lblShipping.classList.add('active');
+        lblShipping.querySelector('input').checked = true;
+        pickupSec.style.display = 'none';
+        addressFields.forEach(f => f.required = true);
+        document.getElementById('selectStore').required = false;
+    } else {
+        lblPickup.classList.add('active');
+        lblPickup.querySelector('input').checked = true;
+        pickupSec.style.display = 'block';
+        addressFields.forEach(f => f.required = false);
+        document.getElementById('selectStore').required = true;
+    }
+    // Gọi Backend tính lại phí ship
+    calculateTotal();
+}
+
+// ==================================
+// 2. TOGGLE FORM HÓA ĐƠN VAT
+// ==================================
+function toggleVatForm() {
+    const cb   = document.getElementById('vatCheckbox');
+    const form = document.getElementById('vatForm');
+    const lbl  = document.getElementById('vatToggleLabel');
+
+    if (cb.checked) {
+        form.classList.add('show');
+        lbl.classList.add('active');
+    } else {
+        form.classList.remove('show');
+        lbl.classList.remove('active');
+    }
+}
+
+// ==================================
+// 3. CHỌN PHƯƠNG THỨC THANH TOÁN
+// ==================================
+function selectPayment(value) {
+    document.querySelectorAll('.pay-option').forEach(opt => opt.classList.remove('active'));
+
+    const map = {
+        'COD': 'payOptCOD',
+        'bank_transfer': 'payOptBank',
+        'zalopay': 'payOptZalo',
+        'momo': 'payOptMomo'
+    };
+    const el = document.getElementById(map[value]);
+    if (el) {
+        el.classList.add('active');
+        el.querySelector('input').checked = true;
+    }
+
+    const bankBox = document.getElementById('bankInfoBox');
+    if (value === 'bank_transfer') {
+        bankBox.classList.add('show');
+    } else {
+        bankBox.classList.remove('show');
+    }
+}
+
+// ==================================
+// 4. ÁP DỤNG MÃ GIẢM GIÁ
+//    (Lưu mã vào biến → gọi calculateTotal)
+// ==================================
+function applyCoupon() {
+    const code = document.getElementById('couponCode').value.trim().toUpperCase();
+    const msg  = document.getElementById('couponMessage');
 
     if (!code) {
-        msgEl.innerHTML = '<span class="voucher-error"><i class="fas fa-exclamation-circle me-1"></i>Vui lòng nhập mã khuyến mãi!</span>';
-        input.focus();
+        msg.innerHTML = '<span style="color:var(--text-light)"><i class="fas fa-info-circle me-1"></i>Vui lòng nhập mã giảm giá</span>';
         return;
     }
 
-    // Loading state
-    btn.disabled = true;
-    btn.innerHTML = '<span class="btn-spinner"></span> Đang kiểm tra...';
+    currentCouponCode = code;
+    document.getElementById('hiddenCouponCode').value = code;
 
-    fetch('index.php?controller=cart&action=applyVoucher', {
+    msg.innerHTML = '<span style="color:var(--text-light)"><i class="fas fa-spinner fa-spin me-1"></i>Đang kiểm tra...</span>';
+
+    // Gọi calculateTotal — backend sẽ validate coupon luôn
+    calculateTotal();
+}
+
+// ==================================
+// 5. GỌI BACKEND TÍNH TOÁN TOÀN BỘ
+//    Fetch → CartController@ajaxCalculateTotal
+// ==================================
+let calcTimeout = null; // Debounce
+
+function calculateTotal() {
+    // Debounce 200ms để tránh gọi quá nhiều lần liên tục
+    if (calcTimeout) clearTimeout(calcTimeout);
+    calcTimeout = setTimeout(_doCalculate, 200);
+}
+
+function _doCalculate() {
+    // Lấy delivery method hiện tại
+    const deliveryEl = document.querySelector('input[name="delivery_method"]:checked');
+    const deliveryMethod = deliveryEl ? deliveryEl.value : 'shipping';
+
+    // Gửi POST lên server
+    const body = new URLSearchParams({
+        delivery_method: deliveryMethod,
+        coupon_code: currentCouponCode
+    });
+
+    fetch('index.php?controller=cart&action=ajaxCalculateTotal', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: `voucher_code=${encodeURIComponent(code)}&subtotal=${CHECKOUT_DATA.subtotal}`
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString()
     })
-    .then(response => response.json())
+    .then(res => res.json())
     .then(data => {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-tag me-1"></i> Áp dụng';
+        if (!data.success) return;
 
-        if (data.success) {
-            currentVoucherDiscount = data.discount;
-            currentVoucherCode = data.code;
-            input.value = data.code;
-            input.readOnly = true;
-            input.style.backgroundColor = '#d1fae5';
-            input.style.borderColor = '#059669';
-            
-            // Đổi nút thành "Hủy"
-            btn.innerHTML = '<i class="fas fa-times me-1"></i> Hủy';
-            btn.onclick = removeVoucher;
-            btn.style.background = '#dc2626';
+        // --- Cập nhật DOM ---
 
-            msgEl.innerHTML = `<span class="voucher-success"><i class="fas fa-check-circle me-1"></i>${data.message} - ${data.description} (-${data.discount_formatted}đ)</span>`;
+        // Tạm tính
+        const txtSubtotal = document.getElementById('txtSubtotal');
+        if (txtSubtotal) txtSubtotal.innerText = data.subtotal_fmt;
 
-            // Hiện dòng voucher discount
-            const voucherLine = document.getElementById('voucherDiscountLine');
-            if (voucherLine) {
-                voucherLine.style.display = 'flex';
-                document.getElementById('summaryVoucherDiscount').textContent = '-' + data.discount_formatted + 'đ';
-            }
-
-            // Tính lại tổng
-            recalculateTotal();
-
-            if (typeof showToast === 'function') {
-                showToast('Áp dụng mã khuyến mãi thành công! 🎉', 'success');
-            }
-        } else {
-            currentVoucherDiscount = 0;
-            currentVoucherCode = '';
-            msgEl.innerHTML = `<span class="voucher-error"><i class="fas fa-times-circle me-1"></i>${data.message}</span>`;
-            
-            // Lắc input
-            input.style.animation = 'none';
-            input.offsetHeight;
-            input.style.animation = 'shake 0.5s ease';
+        // Phí vận chuyển
+        const txtShipping = document.getElementById('txtShipping');
+        if (txtShipping) {
+            txtShipping.innerText = data.shipping_fmt;
+            txtShipping.style.color = data.shipping_free ? '#2e7d32' : '';
         }
+
+        // Coupon message
+        const msg = document.getElementById('couponMessage');
+        if (msg) {
+            if (currentCouponCode) {
+                if (data.coupon_valid) {
+                    msg.innerHTML = '<span style="color:#2e7d32"><i class="fas fa-check-circle me-1"></i>' + data.coupon_message + '</span>';
+                } else if (data.coupon_message) {
+                    msg.innerHTML = '<span style="color:#c62828"><i class="fas fa-times-circle me-1"></i>' + data.coupon_message + '</span>';
+                    // Reset coupon nếu không hợp lệ
+                    currentCouponCode = '';
+                    document.getElementById('hiddenCouponCode').value = '';
+                }
+            }
+        }
+
+        // Coupon discount row
+        const rowCoupon = document.getElementById('rowCouponDiscount');
+        if (rowCoupon) {
+            if (data.coupon_discount > 0) {
+                rowCoupon.style.display = 'flex';
+                document.getElementById('txtCouponDiscount').innerText = data.coupon_discount_fmt;
+            } else {
+                rowCoupon.style.display = 'none';
+            }
+        }
+
+        // Member discount row
+        const rowMember = document.getElementById('rowMemberDiscount');
+        if (rowMember) {
+            if (data.member_discount > 0) {
+                rowMember.style.display = 'flex';
+                document.getElementById('txtMemberDiscount').innerText = data.member_discount_fmt;
+            } else {
+                rowMember.style.display = 'none';
+            }
+        }
+
+        // VAT
+        const rowVat = document.getElementById('rowVat');
+        if (rowVat) {
+            if (data.vat_enabled && data.vat_amount > 0) {
+                rowVat.style.display = 'flex';
+                document.getElementById('txtVat').innerText = data.vat_amount_fmt;
+                const txtVatPct = document.getElementById('txtVatPercent');
+                if (txtVatPct) txtVatPct.innerText = data.vat_percent;
+            } else if (data.vat_enabled) {
+                rowVat.style.display = 'flex';
+                document.getElementById('txtVat').innerText = '0đ';
+                const txtVatPct = document.getElementById('txtVatPercent');
+                if (txtVatPct) txtVatPct.innerText = data.vat_percent;
+            } else {
+                rowVat.style.display = 'none';
+            }
+        }
+
+        // Tổng cộng
+        const txtFinalTotal = document.getElementById('txtFinalTotal');
+        if (txtFinalTotal) txtFinalTotal.innerText = data.final_total_fmt;
     })
-    .catch(error => {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-tag me-1"></i> Áp dụng';
-        console.error('Lỗi:', error);
-        msgEl.innerHTML = '<span class="voucher-error"><i class="fas fa-exclamation-circle me-1"></i>Đã xảy ra lỗi, vui lòng thử lại!</span>';
+    .catch(err => {
+        console.error('Checkout calculateTotal error:', err);
     });
 }
 
-// ============================================================
-// 2. HỦY VOUCHER
-// ============================================================
-function removeVoucher() {
-    const input = document.getElementById('voucherInput');
-    const msgEl = document.getElementById('voucherMessage');
-    const btn = document.getElementById('btnApplyVoucher');
-
-    currentVoucherDiscount = 0;
-    currentVoucherCode = '';
-    input.value = '';
-    input.readOnly = false;
-    input.style.backgroundColor = '';
-    input.style.borderColor = '';
-
-    btn.innerHTML = '<i class="fas fa-tag me-1"></i> Áp dụng';
-    btn.onclick = applyVoucher;
-    btn.style.background = '';
-    
-    msgEl.innerHTML = '';
-
-    // Ẩn dòng voucher
-    const voucherLine = document.getElementById('voucherDiscountLine');
-    if (voucherLine) voucherLine.style.display = 'none';
-
-    recalculateTotal();
-
-    if (typeof showToast === 'function') {
-        showToast('Đã hủy mã khuyến mãi!', 'warning');
-    }
-}
-
-// ============================================================
-// 3. TÍNH LẠI TỔNG TIỀN REALTIME
-// ============================================================
-function recalculateTotal() {
-    const subtotal = CHECKOUT_DATA.subtotal;
-    const memberPercent = CHECKOUT_DATA.memberDiscountPercent;
-    const vatRate = CHECKOUT_DATA.vatRate;
-
-    // Giảm voucher
-    const voucherDiscount = currentVoucherDiscount;
-
-    // Giảm thành viên (tính trên tiền sau voucher)
-    const afterVoucher = subtotal - voucherDiscount;
-    const memberDiscount = Math.round(afterVoucher * memberPercent / 100);
-
-    // Tổng giảm
-    const totalDiscount = voucherDiscount + memberDiscount;
-
-    // Tiền sau giảm
-    const afterDiscount = subtotal - totalDiscount;
-
-    // Thuế VAT
-    const tax = Math.round(afterDiscount * vatRate);
-
-    // Phí ship
-    const shipping = subtotal >= CHECKOUT_DATA.freeShipThreshold ? 0 : 30000;
-
-    // Tổng cuối
-    const total = afterDiscount + tax + shipping;
-
-    // Cập nhật UI
-    const memberDiscountEl = document.getElementById('summaryMemberDiscount');
-    if (memberDiscountEl) {
-        memberDiscountEl.textContent = '-' + formatNumber(memberDiscount) + 'đ';
-    }
-
-    const taxEl = document.getElementById('summaryTax');
-    if (taxEl) taxEl.textContent = formatNumber(tax) + 'đ';
-
-    const shippingEl = document.getElementById('summaryShipping');
-    if (shippingEl) {
-        shippingEl.textContent = shipping === 0 ? 'Miễn phí' : formatNumber(shipping) + 'đ';
-        shippingEl.className = shipping === 0 ? 'fw-bold text-success' : 'fw-bold';
-    }
-
-    const totalEl = document.getElementById('summaryTotal');
-    if (totalEl) totalEl.textContent = formatNumber(total) + 'đ';
-}
-
-// ============================================================
-// 4. CHỌN PHƯƠNG THỨC THANH TOÁN
-// ============================================================
-function selectPayment(element, radioId) {
-    // Bỏ chọn tất cả
-    document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('selected'));
-    // Chọn option hiện tại
-    element.classList.add('selected');
-    document.getElementById(radioId).checked = true;
-}
-
-// ============================================================
-// 5. TIỆN ÍCH
-// ============================================================
-function formatNumber(num) {
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-}
-
-// ============================================================
-// 6. SUBMIT FORM - LOADING STATE
-// ============================================================
+// ==================================
+// 6. KHỞI TẠO KHI TRANG LOAD XONG
+// ==================================
 document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('checkoutForm');
-    if (form) {
-        form.addEventListener('submit', function() {
-            const btn = document.getElementById('btnPlaceOrder');
-            if (btn) {
-                btn.classList.add('loading');
-                btn.innerHTML = '<span class="btn-spinner"></span> Đang xử lý đơn hàng...';
-                btn.disabled = true;
+    // Tính toán lần đầu từ Backend
+    calculateTotal();
+
+    // Enter trên ô mã giảm giá → áp dụng
+    const couponInput = document.getElementById('couponCode');
+    if (couponInput) {
+        couponInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                applyCoupon();
             }
         });
     }
 
-    // Cho phép nhấn Enter để áp dụng voucher
-    const voucherInput = document.getElementById('voucherInput');
-    if (voucherInput) {
-        voucherInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                if (!this.readOnly) applyVoucher();
-            }
+    // Xử lý sự kiện khi chọn cửa hàng (Kiểm tra tồn kho)
+    const selectStore = document.getElementById('selectStore');
+    const storeStockError = document.getElementById('storeStockError');
+    const btnSubmitOrder = document.getElementById('btnSubmitOrder');
+
+    if (selectStore) {
+        selectStore.addEventListener('change', function() {
+            const storeId = this.value;
+            storeStockError.style.display = 'none';
+            btnSubmitOrder.disabled = false;
+            btnSubmitOrder.innerHTML = '<i class="fas fa-lock"></i> HOÀN TẤT ĐẶT HÀNG';
+
+            if (!storeId) return;
+
+            // Vô hiệu hóa nút trong khi chờ
+            btnSubmitOrder.disabled = true;
+            btnSubmitOrder.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ĐANG KIỂM TRA TỒN KHO...';
+
+            const body = new URLSearchParams({ store_id: storeId });
+            fetch('index.php?controller=cart&action=ajaxCheckStoreStock', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: body.toString()
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    btnSubmitOrder.disabled = false;
+                    btnSubmitOrder.innerHTML = '<i class="fas fa-lock"></i> HOÀN TẤT ĐẶT HÀNG';
+                } else {
+                    let errorHtml = `<strong><i class="fas fa-exclamation-triangle"></i> Lỗi tồn kho:</strong> ${data.message}<ul class="mb-0 mt-1 pl-3">`;
+                    if (data.items) {
+                        data.items.forEach(item => {
+                            errorHtml += `<li><b>${item.name}</b> (Kho còn: ${item.available}, Cần: ${item.requested})</li>`;
+                        });
+                    }
+                    errorHtml += '</ul><small class="mt-2 d-block">Vui lòng chọn cơ sở khác hoặc giao tận nơi.</small>';
+                    
+                    storeStockError.innerHTML = errorHtml;
+                    storeStockError.style.display = 'block';
+                    
+                    // Nút Đặt hàng tiếp tục bị vô hiệu hóa
+                    btnSubmitOrder.innerHTML = '<i class="fas fa-times-circle"></i> HẾT HÀNG TẠI CƠ SỞ NÀY';
+                }
+            })
+            .catch(err => {
+                console.error('Lỗi kiểm tra tồn kho:', err);
+                btnSubmitOrder.disabled = false;
+                btnSubmitOrder.innerHTML = '<i class="fas fa-lock"></i> HOÀN TẤT ĐẶT HÀNG';
+            });
         });
     }
 });
-
-// CSS bổ sung cho animation shake
-const shakeStyle = document.createElement('style');
-shakeStyle.textContent = `
-    @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-8px); }
-        50% { transform: translateX(8px); }
-        75% { transform: translateX(-4px); }
-    }
-`;
-document.head.appendChild(shakeStyle);

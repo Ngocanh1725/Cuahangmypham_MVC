@@ -44,10 +44,11 @@ include 'views/layout/header.php';
                         </thead>
                         <tbody>
                             <?php if (!empty($orders)): ?>
-                                <?php foreach ($orders as $row): 
+                                <?php foreach($orders as $row): 
                                     $statusClass = 'bg-secondary';
                                     if($row['status'] == 'Hoàn thành') $statusClass = 'bg-success';
-                                    if($row['status'] == 'Đang giao') $statusClass = 'bg-primary';
+                                    if($row['status'] == 'Đang giao') $statusClass = 'bg-info text-dark';
+                                    if($row['status'] == 'Chuẩn bị hàng') $statusClass = 'bg-primary text-white';
                                     if($row['status'] == 'Chờ xử lý') $statusClass = 'bg-warning text-dark';
                                     if($row['status'] == 'Hủy') $statusClass = 'bg-danger';
                                 ?>
@@ -66,7 +67,9 @@ include 'views/layout/header.php';
                                                     <i class='fas fa-sync-alt me-1 text-primary'></i> Đổi trạng thái
                                                 </button>
                                                 <ul class='dropdown-menu dropdown-menu-end shadow border-0'>
-                                                    <li><a class='dropdown-item py-2' href='index.php?controller=admin&action=updateOrderStatus&id=<?php echo $row['id']; ?>&status=Đang giao'><i class="fas fa-truck text-primary me-2"></i>Đang giao</a></li>
+                                                    <li><a class='dropdown-item py-2' href='index.php?controller=admin&action=updateOrderStatus&id=<?php echo $row['id']; ?>&status=Chờ xử lý'><i class="fas fa-clipboard-check text-secondary me-2"></i>Chờ xử lý</a></li>
+                                                    <li><a class='dropdown-item py-2' href='index.php?controller=admin&action=updateOrderStatus&id=<?php echo $row['id']; ?>&status=Chuẩn bị hàng'><i class="fas fa-box-open text-warning me-2"></i>Chuẩn bị hàng</a></li>
+                                                    <li><a class='dropdown-item py-2' href='index.php?controller=admin&action=updateOrderStatus&id=<?php echo $row['id']; ?>&status=Đang giao'><i class="fas fa-truck text-info me-2"></i>Đang giao</a></li>
                                                     <li><a class='dropdown-item py-2' href='index.php?controller=admin&action=updateOrderStatus&id=<?php echo $row['id']; ?>&status=Hoàn thành'><i class="fas fa-check-circle text-success me-2"></i>Hoàn thành</a></li>
                                                     <li><hr class="dropdown-divider"></li>
                                                     <li><a class='dropdown-item py-2 text-danger' href='index.php?controller=admin&action=updateOrderStatus&id=<?php echo $row['id']; ?>&status=Hủy'><i class="fas fa-times-circle me-2"></i>Hủy đơn</a></li>

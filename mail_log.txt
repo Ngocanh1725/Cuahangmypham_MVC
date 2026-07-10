@@ -1,0 +1,55 @@
+[2026-07-08 05:16:16] TO: hmen2005@gmail.com | SUB: Xác nhận đơn hàng #18 từ Glow Cosmetics 
+Xin chào Hồng Mến,
+
+Cảm ơn bạn đã đặt hàng tại Glow Cosmetics. Đơn hàng của bạn đã được ghi nhận.
+Mã đơn hàng: #18
+Phương thức thanh toán: COD
+
+Chi tiết đơn hàng:
+- Phấn Nước Clio Hiệu Ứng Căng Bóng Kill Cover (x2): 1,090,000đ
+- Chì Kẻ Viền Môi Clio Velvet Lip Pencil (x3): 687,000đ
+- Bảng Màu Mắt 12 Ô Clio Pro Eye Palette (x1): 565,000đ
+
+Tổng cộng: 2,342,000đ
+
+Chúng tôi sẽ thông báo cho bạn khi đơn hàng được giao.
+
+Trân trọng,
+Đội ngũ Glow Cosmetics
+------------------------
+[2026-07-08 05:17:02] TO: hmen2005@gmail.com | SUB: Xác nhận đơn hàng #19 từ Glow Cosmetics 
+Xin chào Hồng Mến,
+
+Cảm ơn bạn đã đặt hàng tại Glow Cosmetics. Đơn hàng của bạn đã được ghi nhận.
+Mã đơn hàng: #19
+Phương thức thanh toán: BANK_TRANSFER
+
+Vui lòng chuyển khoản với nội dung: GLOW 19 hoặc quét mã QR trên website để thanh toán.
+
+Chi tiết đơn hàng:
+- Bảng Màu Mắt 12 Ô Clio Pro Eye Palette (x1): 565,000đ
+
+Tổng cộng: 536,750đ
+
+Chúng tôi sẽ thông báo cho bạn khi đơn hàng được giao.
+
+Trân trọng,
+Đội ngũ Glow Cosmetics
+------------------------
+[2026-07-08 05:45:58] TO: ngocanh2005@gmail.com | SUB: Xác nhận đơn hàng #20 từ Glow Cosmetics 
+Xin chào Ngọc Ánh,
+
+Cảm ơn bạn đã đặt hàng tại Glow Cosmetics. Đơn hàng của bạn đã được ghi nhận.
+Mã đơn hàng: #20
+Phương thức thanh toán: COD
+
+Chi tiết đơn hàng:
+- Bảng Màu Mắt 12 Ô Clio Pro Eye Palette (x16): 9,040,000đ
+
+Tổng cộng: 8,768,800đ
+
+Chúng tôi sẽ thông báo cho bạn khi đơn hàng được giao.
+
+Trân trọng,
+Đội ngũ Glow Cosmetics
+------------------------

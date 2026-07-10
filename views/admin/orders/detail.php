@@ -18,6 +18,65 @@ include 'views/layout/header.php';
                 </div>
             </div>
 
+            <!-- TIẾN TRÌNH THEO DÕI ĐƠN HÀNG (TIMELINE) -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4 order-track-card no-print">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-4 text-center text-muted text-uppercase">Tiến trình đơn hàng</h6>
+                    <div class="order-track">
+                        <?php 
+                        $status = $order['status'];
+                        $step1 = $step2 = $step3 = $step4 = "";
+                        $isCanceled = ($status == 'Hủy' || $status == 'Đã hủy');
+
+                        if ($isCanceled) {
+                            $step1 = "active cancel"; 
+                        } else {
+                            if ($status == 'Chờ xử lý' || $status == 'Đang giao' || $status == 'Hoàn thành') {
+                                $step1 = "active";
+                            }
+                            if ($status == 'Đang giao' || $status == 'Hoàn thành') {
+                                $step2 = "active";
+                            }
+                            if ($status == 'Đang giao' || $status == 'Hoàn thành') {
+                                $step3 = "active";
+                            }
+                            if ($status == 'Hoàn thành') {
+                                $step4 = "active";
+                            }
+                        }
+                        ?>
+
+                        <?php if ($isCanceled): ?>
+                            <div class="track">
+                                <div class="step <?php echo $step1; ?>">
+                                    <span class="icon"><i class="fas fa-times"></i></span>
+                                    <span class="text">Đơn đã hủy</span>
+                                </div>
+                            </div>
+                        <?php else: ?>
+                            <div class="track">
+                                <div class="step <?php echo $step1; ?>">
+                                    <span class="icon"><i class="fas fa-clipboard-check"></i></span>
+                                    <span class="text">Xác nhận đơn</span>
+                                </div>
+                                <div class="step <?php echo $step2; ?>">
+                                    <span class="icon"><i class="fas fa-box-open"></i></span>
+                                    <span class="text">Chuẩn bị hàng</span>
+                                </div>
+                                <div class="step <?php echo $step3; ?>">
+                                    <span class="icon"><i class="fas fa-truck"></i></span>
+                                    <span class="text">Giao cho ship</span>
+                                </div>
+                                <div class="step <?php echo $step4; ?>">
+                                    <span class="icon"><i class="fas fa-box"></i></span>
+                                    <span class="text">Giao thành công</span>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+
             <div class="row">
                 <!-- Thông tin chung & Khách hàng -->
                 <div class="col-md-4 mb-4">
@@ -30,9 +89,10 @@ include 'views/layout/header.php';
                                 <?php 
                                     $statusClass = 'bg-secondary';
                                     if ($order['status'] == 'Chờ xử lý') $statusClass = 'bg-warning text-dark';
+                                    if ($order['status'] == 'Chuẩn bị hàng') $statusClass = 'bg-primary text-white';
                                     if ($order['status'] == 'Đang giao') $statusClass = 'bg-info text-dark';
                                     if ($order['status'] == 'Hoàn thành') $statusClass = 'bg-success';
-                                    if ($order['status'] == 'Hủy') $statusClass = 'bg-danger';
+                                    if ($order['status'] == 'Hủy' || $order['status'] == 'Đã hủy') $statusClass = 'bg-danger';
                                 ?>
                                 <span class="badge <?php echo $statusClass; ?> px-3 py-2 fs-6 mt-1 rounded-pill"><?php echo $order['status']; ?></span>
                             </div>
@@ -61,8 +121,10 @@ include 'views/layout/header.php';
                                         <i class="fas fa-sync-alt me-1"></i> Cập nhật trạng thái
                                     </button>
                                     <ul class="dropdown-menu w-100 text-center shadow border-0">
-                                        <li><a class="dropdown-item py-2" href="index.php?controller=admin&action=updateOrderStatus&id=<?php echo $order['id']; ?>&status=Đang giao"><i class="fas fa-truck text-primary me-2"></i> Đang giao</a></li>
-                                        <li><a class="dropdown-item py-2" href="index.php?controller=admin&action=updateOrderStatus&id=<?php echo $order['id']; ?>&status=Hoàn thành"><i class="fas fa-check-circle text-success me-2"></i> Đã giao & Thu tiền (Hoàn thành)</a></li>
+                                        <li><a class="dropdown-item py-2" href="index.php?controller=admin&action=updateOrderStatus&id=<?php echo $order['id']; ?>&status=Chờ xử lý"><i class="fas fa-clipboard-check text-secondary me-2"></i> Chờ xử lý</a></li>
+                                        <li><a class="dropdown-item py-2" href="index.php?controller=admin&action=updateOrderStatus&id=<?php echo $order['id']; ?>&status=Chuẩn bị hàng"><i class="fas fa-box-open text-warning me-2"></i> Chuẩn bị hàng</a></li>
+                                        <li><a class="dropdown-item py-2" href="index.php?controller=admin&action=updateOrderStatus&id=<?php echo $order['id']; ?>&status=Đang giao"><i class="fas fa-truck text-info me-2"></i> Đang giao</a></li>
+                                        <li><a class="dropdown-item py-2" href="index.php?controller=admin&action=updateOrderStatus&id=<?php echo $order['id']; ?>&status=Hoàn thành"><i class="fas fa-check-circle text-success me-2"></i> Hoàn thành</a></li>
                                         <li><hr class="dropdown-divider"></li>
                                         <li><a class="dropdown-item py-2 text-danger" href="index.php?controller=admin&action=updateOrderStatus&id=<?php echo $order['id']; ?>&status=Hủy"><i class="fas fa-times-circle me-2"></i> Hủy đơn</a></li>
                                     </ul>
@@ -136,6 +198,21 @@ include 'views/layout/header.php';
 
 <style>
     .width-20 { width: 20px; text-align: center; }
+    
+    /* Timeline CSS */
+    .order-track { margin-bottom: 10px; }
+    .track { position: relative; background-color: #ddd; height: 7px; display: flex; margin-bottom: 20px; margin-top: 30px; border-radius: 3px; }
+    .track .step { flex-grow: 1; width: 25%; margin-top: -18px; text-align: center; position: relative; }
+    .track .step::before { height: 7px; position: absolute; content: ""; width: 100%; left: 0; top: 18px; }
+    .track .step.active:before { background: #be185d; }
+    .track .step.active .icon { background: #be185d; color: #fff; }
+    .track .icon { display: inline-block; width: 40px; height: 40px; line-height: 40px; position: relative; border-radius: 100%; background: #ddd; color: #fff; z-index: 10; font-size: 18px; }
+    .track .step.active .text { font-weight: 600; color: #000; }
+    .track .text { display: block; margin-top: 7px; font-size: 0.85rem; color: #777; }
+    .track .step.cancel::before { background: #dc3545; }
+    .track .step.cancel .icon { background: #dc3545; color: #fff; }
+    .track .step.cancel .text { font-weight: 600; color: #dc3545; }
+
     @media print {
         body { background: white !important; }
         .no-print, .admin-sidebar, nav, footer { display: none !important; }

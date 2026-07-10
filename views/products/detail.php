@@ -152,7 +152,14 @@ $category = isset($product['category_name']) && $product['category_name'] ? $pro
                     ?>
                         <span class="position-absolute top-0 start-0 m-4 z-3 px-3 py-1 bg-white border border-danger text-danger rounded-pill fw-bold">-<?php echo $discountPercent; ?>%</span>
                     <?php endif; ?>
-                    <img id="mainProductImage" src="<?php echo htmlspecialchars($imgUrl); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
+                    
+                    <?php if (isset($product['stock']) && $product['stock'] <= 0): ?>
+                        <div class="position-absolute w-100 h-100 z-2 d-flex align-items-center justify-content-center" style="background: rgba(255,255,255,0.6); top:0; left:0;">
+                            <span class="bg-secondary text-white fw-bold py-2 px-4 rounded-pill" style="font-size: 1.2rem; opacity: 0.9;">TẠM HẾT HÀNG</span>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <img id="mainProductImage" src="<?php echo htmlspecialchars($imgUrl); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" <?php if(isset($product['stock']) && $product['stock'] <= 0) echo 'style="filter: grayscale(80%);"'; ?>>
                 </div>
                 
                 <div class="thumbnail-row">
@@ -169,8 +176,16 @@ $category = isset($product['category_name']) && $product['category_name'] ? $pro
             <h1 class="product-title-main"><?php echo htmlspecialchars($product['name']); ?></h1>
             
             <div class="rating-box">
-                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
-                <span class="reviews-count">(128 đánh giá) | Đã bán 2.4k</span>
+                <?php 
+                $avg = isset($reviewStats['avg_rating']) ? $reviewStats['avg_rating'] : 5;
+                $totalR = isset($reviewStats['total_reviews']) ? $reviewStats['total_reviews'] : 0;
+                for($i=1; $i<=5; $i++): 
+                    if($i <= $avg) { echo '<i class="fas fa-star"></i>'; }
+                    elseif($i - 0.5 <= $avg) { echo '<i class="fas fa-star-half-alt"></i>'; }
+                    else { echo '<i class="fas fa-star text-light"></i>'; }
+                endfor; 
+                ?>
+                <span class="reviews-count">(<?php echo $totalR; ?> đánh giá)</span>
             </div>
 
             <div class="price-box">
@@ -213,8 +228,10 @@ $category = isset($product['category_name']) && $product['category_name'] ? $pro
                         </button>
                     </div>
                 <?php else: ?>
-                    <div class="alert alert-danger mt-3 d-inline-block fw-bold py-2 px-4 rounded-pill">
-                        <i class="fas fa-exclamation-circle me-2"></i> Sản phẩm hiện đang hết hàng
+                    <div class="mt-4">
+                        <button type="button" class="btn btn-secondary py-3 px-5 rounded-pill fw-bold w-100" style="background-color: #9e9e9e; border: none; cursor: not-allowed;" disabled>
+                            Tạm hết hàng
+                        </button>
                     </div>
                 <?php endif; ?>
             </form>
@@ -237,7 +254,7 @@ $category = isset($product['category_name']) && $product['category_name'] ? $pro
                 <button class="nav-link" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab">Thông tin & Thành phần</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button" role="tab">Đánh giá (128)</button>
+                <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button" role="tab">Đánh giá (<?php echo isset($reviewStats['total_reviews']) ? $reviewStats['total_reviews'] : 0; ?>)</button>
             </li>
         </ul>
         
@@ -284,29 +301,96 @@ $category = isset($product['category_name']) && $product['category_name'] ? $pro
             <div class="tab-pane fade" id="reviews" role="tabpanel">
                 <div class="row justify-content-center">
                     <div class="col-md-10">
+                        <?php if (isset($_SESSION['flash_message'])): ?>
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <?php echo $_SESSION['flash_message']; unset($_SESSION['flash_message']); ?>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        <?php endif; ?>
+                        
                         <div class="d-flex align-items-center mb-5 bg-light p-4 rounded-4 border">
                             <div class="text-center me-5">
-                                <h1 class="display-4 fw-bold" style="color: var(--brand-primary, #db2777);">4.8</h1>
-                                <div class="text-warning mb-1"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i></div>
-                                <span class="text-muted small">Dựa trên 128 đánh giá</span>
-                            </div>
-                            <div class="flex-grow-1">
-                                <div class="d-flex align-items-center mb-1"><span class="small me-2">5 <i class="fas fa-star text-warning"></i></span> <div class="progress flex-grow-1" style="height: 8px;"><div class="progress-bar bg-warning" style="width: 85%"></div></div></div>
-                                <div class="d-flex align-items-center mb-1"><span class="small me-2">4 <i class="fas fa-star text-warning"></i></span> <div class="progress flex-grow-1" style="height: 8px;"><div class="progress-bar bg-warning" style="width: 10%"></div></div></div>
-                                <div class="d-flex align-items-center mb-1"><span class="small me-2">3 <i class="fas fa-star text-warning"></i></span> <div class="progress flex-grow-1" style="height: 8px;"><div class="progress-bar bg-warning" style="width: 3%"></div></div></div>
-                                <div class="d-flex align-items-center mb-1"><span class="small me-2">2 <i class="fas fa-star text-warning"></i></span> <div class="progress flex-grow-1" style="height: 8px;"><div class="progress-bar bg-warning" style="width: 1%"></div></div></div>
-                                <div class="d-flex align-items-center mb-1"><span class="small me-2">1 <i class="fas fa-star text-warning"></i></span> <div class="progress flex-grow-1" style="height: 8px;"><div class="progress-bar bg-warning" style="width: 1%"></div></div></div>
+                                <h1 class="display-4 fw-bold" style="color: var(--brand-primary, #db2777);"><?php echo isset($reviewStats['avg_rating']) ? number_format($reviewStats['avg_rating'], 1) : '5.0'; ?></h1>
+                                <div class="text-warning mb-1">
+                                    <?php 
+                                    $avg = isset($reviewStats['avg_rating']) ? $reviewStats['avg_rating'] : 5;
+                                    for($i=1; $i<=5; $i++): 
+                                        if($i <= $avg) { echo '<i class="fas fa-star"></i>'; }
+                                        elseif($i - 0.5 <= $avg) { echo '<i class="fas fa-star-half-alt"></i>'; }
+                                        else { echo '<i class="fas fa-star text-light"></i>'; }
+                                    endfor; 
+                                    ?>
+                                </div>
+                                <span class="text-muted small">Dựa trên <?php echo isset($reviewStats['total_reviews']) ? $reviewStats['total_reviews'] : 0; ?> đánh giá</span>
                             </div>
                         </div>
 
-                        <div class="review-item">
-                            <div class="d-flex justify-content-between mb-2">
-                                <div><span class="reviewer-name">Ngọc Trinh</span> <i class="fas fa-check-circle text-success small"></i> <span class="text-success small">Đã mua hàng</span></div>
-                                <span class="review-date">12/05/2024</span>
+                        <!-- Form Đánh giá -->
+                        <?php if(isset($_SESSION['user_id'])): ?>
+                            <div class="mb-5 p-4 border rounded-4">
+                                <h5 class="mb-3">Viết đánh giá của bạn</h5>
+                                <form action="index.php?controller=product&action=addReview" method="POST">
+                                    <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
+                                    <div class="mb-3">
+                                        <label class="form-label d-block fw-bold">Chất lượng sản phẩm</label>
+                                        <div class="rating-input fs-4 text-warning" style="cursor: pointer;">
+                                            <input type="radio" name="rating" value="1" id="star1" class="d-none"> <label for="star1"><i class="far fa-star star-label"></i></label>
+                                            <input type="radio" name="rating" value="2" id="star2" class="d-none"> <label for="star2"><i class="far fa-star star-label"></i></label>
+                                            <input type="radio" name="rating" value="3" id="star3" class="d-none"> <label for="star3"><i class="far fa-star star-label"></i></label>
+                                            <input type="radio" name="rating" value="4" id="star4" class="d-none"> <label for="star4"><i class="far fa-star star-label"></i></label>
+                                            <input type="radio" name="rating" value="5" id="star5" class="d-none" checked> <label for="star5"><i class="fas fa-star star-label"></i></label>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Nội dung đánh giá</label>
+                                        <textarea class="form-control" name="comment" rows="3" required placeholder="Chia sẻ cảm nhận của bạn về sản phẩm này..."></textarea>
+                                    </div>
+                                    <button type="submit" class="btn text-white px-4 rounded-pill" style="background-color: var(--brand-primary, #db2777);">Gửi Đánh Giá</button>
+                                </form>
                             </div>
-                            <div class="text-warning small mb-2"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-                            <p class="mb-0">Sản phẩm dùng rất thích, chất kem mịn thấm nhanh không bị nhờn rít. Đóng gói rất cẩn thận và đẹp mắt. Sẽ ủng hộ shop lâu dài!</p>
-                        </div>
+                            
+                            <script>
+                                document.querySelectorAll('.star-label').forEach((label, index) => {
+                                    label.addEventListener('click', () => {
+                                        let stars = document.querySelectorAll('.star-label i');
+                                        stars.forEach((s, i) => {
+                                            if (i <= index) {
+                                                s.classList.remove('far');
+                                                s.classList.add('fas');
+                                            } else {
+                                                s.classList.remove('fas');
+                                                s.classList.add('far');
+                                            }
+                                        });
+                                    });
+                                });
+                            </script>
+                        <?php else: ?>
+                            <div class="alert alert-secondary text-center mb-5">
+                                Vui lòng <a href="index.php?controller=user&action=login" class="fw-bold text-dark">đăng nhập</a> để gửi đánh giá.
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- Danh sách đánh giá -->
+                        <h5 class="mb-4">Khách hàng nhận xét</h5>
+                        <?php if(!empty($reviews)): ?>
+                            <?php foreach($reviews as $r): ?>
+                            <div class="review-item mb-4 pb-3 border-bottom">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <div><span class="reviewer-name fw-bold"><?php echo htmlspecialchars($r['fullname']); ?></span> <i class="fas fa-check-circle text-success small ms-1" title="Đã xác thực"></i></div>
+                                    <span class="review-date text-muted small"><?php echo date('d/m/Y', strtotime($r['created_at'])); ?></span>
+                                </div>
+                                <div class="text-warning small mb-2">
+                                    <?php for($i=1; $i<=5; $i++): ?>
+                                        <i class="fas fa-star <?php echo ($i <= $r['rating']) ? '' : 'text-light'; ?>"></i>
+                                    <?php endfor; ?>
+                                </div>
+                                <p class="mb-0"><?php echo nl2br(htmlspecialchars($r['comment'])); ?></p>
+                            </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <p class="text-muted">Chưa có đánh giá nào cho sản phẩm này. Hãy là người đầu tiên đánh giá!</p>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -398,6 +482,11 @@ $extraJS = "
     // 3. Xử lý nút Mua Ngay
     function buyNow() {
         const form = document.getElementById('addToCartForm');
+        const hiddenField = document.createElement('input');
+        hiddenField.type = 'hidden';
+        hiddenField.name = 'buy_now';
+        hiddenField.value = '1';
+        form.appendChild(hiddenField);
         form.submit();
     }
 </script>

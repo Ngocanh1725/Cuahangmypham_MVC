@@ -17,9 +17,10 @@ include 'views/layout/header.php';
         box-shadow: 0 20px 40px rgba(0,0,0,0.08);
     }
     .auth-bg {
-        background-image: url('https://images.unsplash.com/photo-1596462502278-27bf85033e5a?q=80&w=2071&auto=format&fit=crop');
+        background-image: url('https://images.unsplash.com/photo-1522337660859-02fbefca4702?q=80&w=2069&auto=format&fit=crop');
         background-size: cover;
         background-position: center;
+        background-color: #fce7f3;
         min-height: 500px;
         position: relative;
     }
@@ -47,24 +48,29 @@ include 'views/layout/header.php';
         transition: all 0.3s ease;
     }
     .form-control:focus {
-        border-color: var(--brand-color);
-        box-shadow: 0 0 0 0.2rem rgba(255, 107, 107, 0.1);
+        border-color: #1a1a1a;
+        box-shadow: 0 0 0 0.2rem rgba(26, 26, 26, 0.1);
         background: #fff;
     }
     .btn-auth {
-        background: var(--brand-color);
+        background: #1a1a1a;
         color: white;
         border-radius: 12px;
         padding: 15px;
         font-weight: 600;
         letter-spacing: 0.5px;
         transition: all 0.3s ease;
+        border: none;
     }
     .btn-auth:hover {
-        background: #e65c5c;
+        background: #ff3b3b;
+        color: white;
         transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(255, 107, 107, 0.2);
+        box-shadow: 0 10px 20px rgba(255, 59, 59, 0.2);
     }
+    .text-brand { color: #1a1a1a !important; }
+    .text-brand:hover { color: #ff3b3b !important; }
+    .border-brand { border-color: #1a1a1a !important; }
 </style>
 
 <div class="auth-wrapper">

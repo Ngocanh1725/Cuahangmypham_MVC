@@ -18,7 +18,10 @@ class UserModel {
         if ($result && $result->num_rows > 0) {
             $user = $result->fetch_assoc();
             
-            if (password_verify($password, $user['password'])) {
+            // Hỗ trợ cả mật khẩu đã hash (chuẩn), mật khẩu thường (test) và MD5 (cũ)
+            if (password_verify($password, $user['password']) || 
+                $user['password'] === $password || 
+                md5($password) === $user['password']) {
                 return $user; 
             }
         }
@@ -90,6 +93,37 @@ class UserModel {
         $stmt->bind_param("si", $avatar_path, $id);
         $result = $stmt->execute();
         $stmt->close();
+        return $result;
+    }
+
+    // [MỚI] Cập nhật điểm và tính toán lại hạng thành viên
+    public function updateUserTier($user_id, $current_tier_id, $newPoints) {
+        // 1. Cập nhật số điểm mới
+        $stmt = $this->conn->prepare("UPDATE users SET points = ? WHERE id = ?");
+        $stmt->bind_param("ii", $newPoints, $user_id);
+        $result = $stmt->execute();
+        $stmt->close();
+
+        // 2. Kiểm tra xem có đủ điểm lên hạng mới không
+        $stmt2 = $this->conn->prepare("SELECT id FROM membership_tiers WHERE min_points <= ? ORDER BY min_points DESC LIMIT 1");
+        $stmt2->bind_param("i", $newPoints);
+        $stmt2->execute();
+        $res = $stmt2->get_result();
+        
+        if ($res && $res->num_rows > 0) {
+            $tier = $res->fetch_assoc();
+            $new_tier_id = $tier['id'];
+            
+            // Nếu hạng thay đổi thì cập nhật tier_id
+            if ($new_tier_id != $current_tier_id) {
+                $stmt3 = $this->conn->prepare("UPDATE users SET tier_id = ? WHERE id = ?");
+                $stmt3->bind_param("ii", $new_tier_id, $user_id);
+                $stmt3->execute();
+                $stmt3->close();
+            }
+        }
+        $stmt2->close();
+        
         return $result;
     }
 }

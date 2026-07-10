@@ -109,10 +109,14 @@ class UserController {
         }
         
         require_once 'models/OrderModel.php';
+        require_once 'models/UserModel.php';
         $orderModel = new OrderModel($this->conn);
+        $userModel = new UserModel($this->conn);
         
         $user_id = $_SESSION['user_id'];
         $orders = $orderModel->getOrdersByUserId($user_id);
+        $currentUser = $userModel->getUserById($user_id);
+        $userEmail = $currentUser ? $currentUser['email'] : 'email của bạn';
 
         require_once 'views/users/orders.php';
     }

@@ -447,6 +447,17 @@ class AdminController {
                 }
             }
             $this->adminModel->updateOrderStatus($id, $status);
+            
+            // Gửi email thông báo trạng thái
+            if ($order && !empty($order['customer_email'])) {
+                require_once 'helpers/MailHelper.php';
+                MailHelper::sendOrderStatusUpdate($id, $order['customer_email'], $order['customer_name'], $status);
+                
+                // Gửi lời mời đánh giá nếu đã giao hàng thành công
+                if ($status === 'Hoàn thành') {
+                    MailHelper::sendReviewInvitation($id, $order['customer_email'], $order['customer_name']);
+                }
+            }
         }
         header("Location: index.php?controller=admin&action=orderDetail&id=" . $id);
         exit();
@@ -573,6 +584,96 @@ class AdminController {
         $posts = (require_once 'models/PostModel.php') ? (new PostModel($this->adminModel->getConn()))->getAllPosts() : [];
         $newOrders = $this->adminModel->getNewOrdersCount();
         require_once 'views/admin/posts/index.php';
+    }
+
+    public function addPost() {
+        $this->checkAuth('posts');
+        require_once 'models/PostModel.php';
+        $postModel = new PostModel($this->adminModel->getConn());
+        $message = '';
+        $newOrders = $this->adminModel->getNewOrdersCount();
+
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $title = $_POST['title'] ?? '';
+            $content = $_POST['content'] ?? '';
+            $status = isset($_POST['status']) ? intval($_POST['status']) : 1;
+            $imagePath = "https://via.placeholder.com/600x400?text=No+Image";
+
+            if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
+                $uploadResult = UploadHelper::uploadFile($_FILES['image'], 'posts');
+                if ($uploadResult['success']) {
+                    $imagePath = $uploadResult['path'];
+                } else {
+                    $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
+                }
+            }
+
+            if (empty($message)) {
+                if ($postModel->addPost($title, $content, $imagePath, $status)) {
+                    header('Location: index.php?controller=admin&action=posts');
+                    exit();
+                } else {
+                    $message = "<div class='alert alert-danger'>Có lỗi xảy ra khi thêm bài viết!</div>";
+                }
+            }
+        }
+        require_once 'views/admin/posts/add.php';
+    }
+
+    public function editPost() {
+        $this->checkAuth('posts');
+        require_once 'models/PostModel.php';
+        $postModel = new PostModel($this->adminModel->getConn());
+        $message = '';
+        $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+        $newOrders = $this->adminModel->getNewOrdersCount();
+
+        $post = $postModel->getPostById($id);
+        if (!$post) die("Bài viết không tồn tại!");
+
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $title = $_POST['title'] ?? '';
+            $content = $_POST['content'] ?? '';
+            $status = isset($_POST['status']) ? intval($_POST['status']) : 1;
+            $imagePath = $_POST['current_image'] ?? '';
+
+            if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
+                $uploadResult = UploadHelper::uploadFile($_FILES['image'], 'posts');
+                if ($uploadResult['success']) {
+                    UploadHelper::deleteFile($_POST['current_image'] ?? '');
+                    $imagePath = $uploadResult['path'];
+                } else {
+                    $message = "<div class='alert alert-danger'>" . $uploadResult['error'] . "</div>";
+                }
+            }
+
+            if (empty($message)) {
+                if ($postModel->updatePost($id, $title, $content, $imagePath, $status)) {
+                    header('Location: index.php?controller=admin&action=posts');
+                    exit();
+                } else {
+                    $message = "<div class='alert alert-danger'>Có lỗi xảy ra khi cập nhật!</div>";
+                }
+            }
+        }
+        require_once 'views/admin/posts/edit.php';
+    }
+
+    public function deletePost() {
+        $this->checkAuth('posts');
+        require_once 'models/PostModel.php';
+        $postModel = new PostModel($this->adminModel->getConn());
+        $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+        if ($id > 0) {
+            $post = $postModel->getPostById($id);
+            if ($post) {
+                UploadHelper::deleteFile($post['image']);
+                $postModel->deletePost($id);
+            }
+        }
+        header('Location: index.php?controller=admin&action=posts');
+        exit();
     }
 
     // ---------------------------------------------------------
@@ -747,6 +848,314 @@ class AdminController {
         if ($id > 0) $storeModel->deleteStore($id);
         header('Location: index.php?controller=admin&action=stores');
         exit();
+    }
+    // ---------------------------------------------------------
+    // QUẢN LÝ MENU TRANG WEB
+    // ---------------------------------------------------------
+    public function menus() {
+        $this->checkAuth();
+        require_once 'models/MenuModel.php';
+        $menuModel = new MenuModel($this->adminModel->getConn());
+        $menus = $menuModel->getAllMenus();
+        $newOrders = $this->adminModel->getNewOrdersCount();
+        require_once 'views/admin/menus/index.php';
+    }
+
+    public function addMenu() {
+        $this->checkAuth();
+        require_once 'models/MenuModel.php';
+        $menuModel = new MenuModel($this->adminModel->getConn());
+        $message = '';
+        
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $title = $_POST['title'] ?? '';
+            $url = $_POST['url'] ?? '';
+            $position = $_POST['position'] ?? 'header';
+            $sort_order = isset($_POST['sort_order']) ? (int)$_POST['sort_order'] : 0;
+            $status = isset($_POST['status']) ? (int)$_POST['status'] : 1;
+            $parent_id = !empty($_POST['parent_id']) ? (int)$_POST['parent_id'] : null;
+            $target = $_POST['target'] ?? '_self';
+            
+            if ($menuModel->addMenu($title, $url, $position, $sort_order, $status, $parent_id, $target)) {
+                header('Location: index.php?controller=admin&action=menus');
+                exit();
+            } else {
+                $message = '<div class="alert alert-danger">Lỗi thêm menu! Vui lòng thử lại.</div>';
+            }
+        }
+        
+        
+        $newOrders = $this->adminModel->getNewOrdersCount();
+        $headerMenus = $menuModel->getRootMenusByPosition('header', false);
+        $footerMenus = $menuModel->getRootMenusByPosition('footer', false);
+        require_once 'views/admin/menus/add.php';
+    }
+
+    public function editMenu() {
+        $this->checkAuth();
+        require_once 'models/MenuModel.php';
+        $menuModel = new MenuModel($this->adminModel->getConn());
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        $menu = $menuModel->getMenuById($id);
+        
+        if (!$menu) die("Menu không tồn tại!");
+        
+        $message = '';
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $title = $_POST['title'] ?? '';
+            $url = $_POST['url'] ?? '';
+            $position = $_POST['position'] ?? 'header';
+            $sort_order = isset($_POST['sort_order']) ? (int)$_POST['sort_order'] : 0;
+            $status = isset($_POST['status']) ? (int)$_POST['status'] : 0;
+            $parent_id = !empty($_POST['parent_id']) ? (int)$_POST['parent_id'] : null;
+            $target = $_POST['target'] ?? '_self';
+            
+            if ($menuModel->updateMenu($id, $title, $url, $position, $sort_order, $status, $parent_id, $target)) {
+                header('Location: index.php?controller=admin&action=menus');
+                exit();
+            } else {
+                $message = '<div class="alert alert-danger">Lỗi cập nhật menu! Vui lòng thử lại.</div>';
+            }
+        }
+        
+        
+        $newOrders = $this->adminModel->getNewOrdersCount();
+        $headerMenus = $menuModel->getRootMenusByPosition('header', false);
+        $footerMenus = $menuModel->getRootMenusByPosition('footer', false);
+        require_once 'views/admin/menus/edit.php';
+    }
+
+    public function deleteMenu() {
+        $this->checkAuth();
+        require_once 'models/MenuModel.php';
+        $menuModel = new MenuModel($this->adminModel->getConn());
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        
+        if ($id > 0) {
+            $menuModel->deleteMenu($id);
+        }
+        
+        header('Location: index.php?controller=admin&action=menus');
+        exit();
+    }
+    // ---------------------------------------------------------
+    // QUẢN LÝ ĐÁNH GIÁ (REVIEWS)
+    // ---------------------------------------------------------
+    public function reviews() {
+        $this->checkAuth();
+        require_once 'models/ReviewModel.php';
+        $reviewModel = new ReviewModel($this->adminModel->getConn());
+        $reviews = $reviewModel->getAllReviews();
+        $newOrders = $this->adminModel->getNewOrdersCount();
+        require_once 'views/admin/reviews/index.php';
+    }
+
+    public function toggleReview() {
+        $this->checkAuth();
+        require_once 'models/ReviewModel.php';
+        $reviewModel = new ReviewModel($this->adminModel->getConn());
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        
+        if ($id > 0) {
+            $reviewModel->toggleStatus($id);
+        }
+        
+        header('Location: index.php?controller=admin&action=reviews');
+        exit();
+    }
+
+    public function deleteReview() {
+        $this->checkAuth();
+        require_once 'models/ReviewModel.php';
+        $reviewModel = new ReviewModel($this->adminModel->getConn());
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        
+        if ($id > 0) {
+            $reviewModel->deleteReview($id);
+        }
+        
+        header('Location: index.php?controller=admin&action=reviews');
+        exit();
+    }
+
+    // ---------------------------------------------------------
+    // QUẢN LÝ CHAT (TIN NHẮN)
+    // ---------------------------------------------------------
+    public function chat() {
+        $this->checkAuth();
+        require_once 'models/ChatModel.php';
+        $chatModel = new ChatModel($this->adminModel->getConn());
+        
+        $chatUsers = $chatModel->getChatUsers();
+        $newOrders = $this->adminModel->getNewOrdersCount();
+        
+        // Nếu admin click vào 1 người dùng cụ thể
+        $active_user_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
+        $messages = [];
+        if ($active_user_id > 0) {
+            $messages = $chatModel->getMessages($active_user_id);
+        }
+        
+        require_once 'views/admin/chat/index.php';
+    }
+
+    // API lấy tin nhắn cho admin (AJAX)
+    public function getAdminMessages() {
+        $this->checkAuth();
+        $user_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
+        
+        if ($user_id > 0) {
+            require_once 'models/ChatModel.php';
+            $chatModel = new ChatModel($this->adminModel->getConn());
+            $messages = $chatModel->getMessages($user_id);
+            echo json_encode(['status' => 'success', 'data' => $messages]);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid user ID']);
+        }
+        exit();
+    }
+
+    // API gửi tin nhắn cho admin (AJAX)
+    public function sendAdminMessage() {
+        $this->checkAuth();
+        $user_id = isset($_POST['user_id']) ? (int)$_POST['user_id'] : 0;
+        $message = isset($_POST['message']) ? trim($_POST['message']) : '';
+        $product_id = isset($_POST['product_id']) ? (int)$_POST['product_id'] : null;
+
+        if ($user_id > 0 && (!empty($message) || $product_id > 0)) {
+            require_once 'models/ChatModel.php';
+            $chatModel = new ChatModel($this->adminModel->getConn());
+            $chatModel->sendMessage($user_id, $message, 1, $product_id);
+            echo json_encode(['status' => 'success']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid data']);
+        }
+        exit();
+    }
+
+    // ---------------------------------------------------------
+    // QUẢN LÝ NHÀ CUNG CẤP (SUPPLIERS)
+    // ---------------------------------------------------------
+    public function suppliers() {
+        $this->checkAuth();
+        require_once 'models/SupplierModel.php';
+        $supplierModel = new SupplierModel($this->adminModel->getConn());
+        $suppliers = $supplierModel->getAllSuppliers();
+        require_once 'views/admin/suppliers/index.php';
+    }
+
+    public function addSupplier() {
+        $this->checkAuth();
+        require_once 'models/SupplierModel.php';
+        $supplierModel = new SupplierModel($this->adminModel->getConn());
+
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $name = $_POST['name'] ?? '';
+            $phone = $_POST['phone'] ?? '';
+            $email = $_POST['email'] ?? '';
+            $address = $_POST['address'] ?? '';
+
+            if (!empty($name)) {
+                $supplierModel->addSupplier($name, $phone, $email, $address);
+                header('Location: index.php?controller=admin&action=suppliers');
+                exit();
+            } else {
+                $error = "Tên nhà cung cấp không được để trống!";
+            }
+        }
+        require_once 'views/admin/suppliers/add.php';
+    }
+
+    public function editSupplier() {
+        $this->checkAuth();
+        require_once 'models/SupplierModel.php';
+        $supplierModel = new SupplierModel($this->adminModel->getConn());
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $name = $_POST['name'] ?? '';
+            $phone = $_POST['phone'] ?? '';
+            $email = $_POST['email'] ?? '';
+            $address = $_POST['address'] ?? '';
+
+            if (!empty($name) && $id > 0) {
+                $supplierModel->updateSupplier($id, $name, $phone, $email, $address);
+                header('Location: index.php?controller=admin&action=suppliers');
+                exit();
+            } else {
+                $error = "Tên nhà cung cấp không được để trống!";
+            }
+        }
+
+        if ($id > 0) {
+            $supplier = $supplierModel->getSupplierById($id);
+            if ($supplier) {
+                require_once 'views/admin/suppliers/edit.php';
+                return;
+            }
+        }
+        header('Location: index.php?controller=admin&action=suppliers');
+        exit();
+    }
+
+    public function deleteSupplier() {
+        $this->checkAuth();
+        require_once 'models/SupplierModel.php';
+        $supplierModel = new SupplierModel($this->adminModel->getConn());
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+
+        if ($id > 0) {
+            $supplierModel->deleteSupplier($id);
+        }
+        header('Location: index.php?controller=admin&action=suppliers');
+        exit();
+    }
+
+    // ---------------------------------------------------------
+    // QUẢN LÝ KHO HÀNG (INVENTORY)
+    // ---------------------------------------------------------
+    public function inventory() {
+        $this->checkAuth();
+        require_once 'models/InventoryModel.php';
+        $inventoryModel = new InventoryModel($this->adminModel->getConn());
+        
+        $logs = $inventoryModel->getLogs();
+        require_once 'views/admin/inventory/index.php';
+    }
+
+    public function addStock() {
+        $this->checkAuth();
+        require_once 'models/InventoryModel.php';
+        require_once 'models/ProductModel.php';
+        require_once 'models/SupplierModel.php';
+        
+        $inventoryModel = new InventoryModel($this->adminModel->getConn());
+        $productModel = new ProductModel($this->adminModel->getConn());
+        $supplierModel = new SupplierModel($this->adminModel->getConn());
+
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $product_id = isset($_POST['product_id']) ? (int)$_POST['product_id'] : 0;
+            $supplier_id = isset($_POST['supplier_id']) ? (int)$_POST['supplier_id'] : 0;
+            $amount = isset($_POST['amount']) ? (int)$_POST['amount'] : 0;
+            $reason = isset($_POST['reason']) ? trim($_POST['reason']) : 'Nhập hàng mới';
+
+            if ($product_id > 0 && $amount > 0) {
+                if ($inventoryModel->addStock($product_id, $supplier_id, $amount, $reason)) {
+                    header('Location: index.php?controller=admin&action=inventory');
+                    exit();
+                } else {
+                    $error = "Có lỗi xảy ra khi nhập kho!";
+                }
+            } else {
+                $error = "Vui lòng nhập đầy đủ thông tin (Số lượng > 0)!";
+            }
+        }
+
+        // Lấy danh sách sản phẩm và nhà cung cấp để hiển thị form
+        $products = $productModel->getAllProducts();
+        $suppliers = $supplierModel->getAllSuppliers();
+
+        require_once 'views/admin/inventory/add_stock.php';
     }
 }
 ?>

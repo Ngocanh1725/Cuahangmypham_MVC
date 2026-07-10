@@ -13,12 +13,31 @@
         </a>
 
         <!-- Menu Điều Hướng (Desktop) -->
+        <?php
+        if (!class_exists('MenuModel')) {
+            require_once 'models/MenuModel.php';
+        }
+        global $db;
+        $menuModel = new MenuModel($db);
+        $headerMenus = $menuModel->getMenuTree('header');
+        ?>
         <nav class="rhode-nav-menu d-none d-lg-flex">
-            <a href="index.php">Trang chủ</a>
-            <a href="index.php?controller=product&action=index">Cửa hàng</a>
-            <a href="index.php?controller=brand&action=index">Thương hiệu</a>
-            <a href="index.php?controller=page&action=stores">Hệ thống</a>
-            <a href="index.php?controller=page&action=blog">Tạp chí</a>
+            <?php foreach ($headerMenus as $hmenu): ?>
+                <?php if (!empty($hmenu['children'])): ?>
+                    <div class="dropdown">
+                        <a href="<?php echo htmlspecialchars($hmenu['url']); ?>" class="dropdown-toggle" data-bs-toggle="dropdown" target="<?php echo htmlspecialchars($hmenu['target']); ?>" style="border-bottom: none;">
+                            <?php echo htmlspecialchars($hmenu['title']); ?>
+                        </a>
+                        <ul class="dropdown-menu border-0 shadow-sm mt-3" style="border-radius: 10px;">
+                            <?php foreach ($hmenu['children'] as $child): ?>
+                                <li><a class="dropdown-item py-2" href="<?php echo htmlspecialchars($child['url']); ?>" target="<?php echo htmlspecialchars($child['target']); ?>"><?php echo htmlspecialchars($child['title']); ?></a></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                <?php else: ?>
+                    <a href="<?php echo htmlspecialchars($hmenu['url']); ?>" target="<?php echo htmlspecialchars($hmenu['target']); ?>"><?php echo htmlspecialchars($hmenu['title']); ?></a>
+                <?php endif; ?>
+            <?php endforeach; ?>
         </nav>
 
         <!-- Cụm Icon Bên Phải -->

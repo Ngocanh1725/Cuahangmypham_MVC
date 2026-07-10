@@ -17,6 +17,17 @@ include 'views/layout/navbar.php';
         </div>
     </div>
 
+    <!-- Thông báo hóa đơn điện tử -->
+    <div class="alert alert-info border-0 shadow-sm rounded-4 mb-4" role="alert" style="background-color: #f0f9ff; color: #0369a1;">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-info-circle fa-2x me-3 text-info"></i>
+            <div>
+                <strong>Đơn hàng của bạn đã được xác nhận.</strong> Biên lai chi tiết đã được gửi đến email <strong><?php echo htmlspecialchars($userEmail ?? ''); ?></strong>.<br>
+                Hóa đơn điện tử (VAT) sẽ được phát hành và gửi vào email của quý khách trong vòng 1-3 ngày làm việc kể từ thời điểm giao hàng thành công.
+            </div>
+        </div>
+    </div>
+
     <div class="card border-0 shadow-sm rounded-4 table-custom">
         <div class="card-body p-0">
             <div class="table-responsive">

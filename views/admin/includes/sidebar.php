@@ -45,6 +45,17 @@ function hasMenuPermission($module, $role, $perms) {
         text-align: center;
         letter-spacing: 1px;
     }
+    /* Đảm bảo sidebar không bị bóp méo (Fix kích thước cứng 260px thay vì % của col-md-2) */
+    @media (min-width: 768px) {
+        .admin-sidebar {
+            flex: 0 0 260px !important;
+            max-width: 260px !important;
+        }
+        .admin-sidebar + div {
+            flex: 0 0 calc(100% - 260px) !important;
+            max-width: calc(100% - 260px) !important;
+        }
+    }
     .admin-nav-link {
         color: #64748b;
         font-weight: 600;
@@ -113,6 +124,20 @@ function hasMenuPermission($module, $role, $perms) {
                 </a>
             </li>
             <?php endif; ?>
+            
+            <!-- MENU NHÀ CUNG CẤP & KHO HÀNG -->
+            <?php if (hasMenuPermission('products', $_SESSION['role'] ?? 0, $userPerms)): ?>
+            <li class="nav-item">
+                <a class="admin-nav-link <?php echo (isset($_GET['action']) && strpos($_GET['action'], 'upplier') !== false) ? 'active' : ''; ?>" href="index.php?controller=admin&action=suppliers">
+                    <i class="fas fa-truck"></i> Quản lý Nhà cung cấp
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="admin-nav-link <?php echo (isset($_GET['action']) && ($_GET['action'] == 'inventory' || $_GET['action'] == 'addStock')) ? 'active' : ''; ?>" href="index.php?controller=admin&action=inventory">
+                    <i class="fas fa-boxes"></i> Quản lý Kho hàng
+                </a>
+            </li>
+            <?php endif; ?>
             <?php if (hasMenuPermission('products', $_SESSION['role'] ?? 0, $userPerms)): ?>
             <li class="nav-item">
                 <a class="admin-nav-link <?php echo (isset($_GET['action']) && $_GET['action'] == 'promotions') ? 'active' : ''; ?>" href="index.php?controller=admin&action=promotions">
@@ -172,6 +197,25 @@ function hasMenuPermission($module, $role, $perms) {
             <li class="nav-item">
                 <a class="admin-nav-link <?php echo (isset($_GET['action']) && strpos($_GET['action'], 'user') !== false && $_GET['action'] != 'logout') ? 'active' : ''; ?>" href="index.php?controller=admin&action=users">
                     <i class="fas fa-users-cog"></i> Phân quyền & User
+                </a>
+            </li>
+            <?php endif; ?>
+
+            <!-- MENU CẤU HÌNH MENU TRANG WEB -->
+            <?php if(isset($_SESSION['role']) && $_SESSION['role'] == 1): ?>
+            <li class="nav-item">
+                <a class="admin-nav-link <?php echo (isset($_GET['action']) && strpos($_GET['action'], 'enu') !== false) ? 'active' : ''; ?>" href="index.php?controller=admin&action=menus">
+                    <i class="fas fa-list"></i> Quản lý Menu
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="admin-nav-link <?php echo (isset($_GET['action']) && strpos($_GET['action'], 'eview') !== false) ? 'active' : ''; ?>" href="index.php?controller=admin&action=reviews">
+                    <i class="fas fa-star"></i> Quản lý Đánh giá
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="admin-nav-link <?php echo (isset($_GET['action']) && strpos($_GET['action'], 'chat') !== false) ? 'active' : ''; ?>" href="index.php?controller=admin&action=chat">
+                    <i class="fas fa-comment-dots"></i> Hỗ trợ Khách hàng
                 </a>
             </li>
             <?php endif; ?>

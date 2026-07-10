@@ -204,11 +204,18 @@ $priceRanges = [
     .sort-select:focus { border-color: var(--brand-main); box-shadow: 0 0 0 0.2rem rgba(219, 39, 119, 0.25); }
     
     /* Mới: Accordion Bộ lọc phong cách Beauty Box */
-    .filter-sidebar { background: #fff; padding: 0; border: none; }
-    .filter-main-title { font-size: 1.15rem; font-weight: 800; text-transform: uppercase; margin-bottom: 25px; letter-spacing: 0.5px; }
-    .filter-group { border-bottom: 1px solid #f1f1f1; padding-bottom: 20px; margin-bottom: 20px; }
-    .filter-group-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 15px; }
-    .filter-group-title { font-weight: 700; font-size: 0.95rem; color: #1a1a1a; margin: 0; }
+    .filter-sidebar { background: #fff; padding: 25px; border: 1px solid #f1f1f1; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.03); position: sticky; top: 90px; max-height: calc(100vh - 110px); overflow-y: auto; }
+    /* Tùy chỉnh thanh cuộn cho sidebar mượt mà hơn */
+    .filter-sidebar::-webkit-scrollbar { width: 5px; }
+    .filter-sidebar::-webkit-scrollbar-track { background: transparent; }
+    .filter-sidebar::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 10px; }
+    .filter-sidebar::-webkit-scrollbar-thumb:hover { background: #ccc; }
+
+    .filter-main-title { font-size: 1.25rem; font-weight: 800; text-transform: uppercase; margin-bottom: 25px; letter-spacing: 0.5px; color: var(--rhode-pink-accent); border-bottom: 2px solid var(--rhode-pink-light); padding-bottom: 15px;}
+    .filter-group { border-bottom: 1px dashed #eee; padding-bottom: 20px; margin-bottom: 20px; }
+    .filter-group-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 15px; transition: all 0.2s; }
+    .filter-group-header:hover .filter-group-title { color: var(--rhode-pink-accent); }
+    .filter-group-title { font-weight: 700; font-size: 1rem; color: #1a1a1a; margin: 0; transition: all 0.2s; }
     .filter-group-icon { font-size: 0.8rem; color: #1a1a1a; transition: transform 0.3s; }
     .filter-group-icon.collapsed { transform: rotate(180deg); }
     .filter-content { overflow: hidden; transition: max-height 0.3s ease-out; }

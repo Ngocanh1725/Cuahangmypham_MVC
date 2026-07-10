@@ -26,11 +26,8 @@ class HomeController {
         $brandsList = $this->brandModel->getHomeBrands(12);
 
         // --- SECTION 3: Flash Sale ---
-        // Ưu tiên sản phẩm có flag is_flash_sale, nếu ít thì bổ sung từ old_price > price
+        // Chỉ lấy những sản phẩm được admin chủ động tick chọn "Flash Sale"
         $flashSaleProducts = $this->productModel->getProductsByFlag('is_flash_sale', 10);
-        if (count($flashSaleProducts) < 4) {
-            $flashSaleProducts = $this->productModel->getFlashSaleProducts(10);
-        }
         $settings = $this->adminModel->getAllSettings();
         $flashSaleEnd = $settings['flash_sale_end']['setting_value'] ?? '';
 
@@ -39,10 +36,10 @@ class HomeController {
 
         // --- SECTION 5: Xu Hướng Làm Đẹp (tabs) ---
         $trendingTabProducts = [
-            'duong_da'   => $this->productModel->getProductsByCategoryName('Dưỡng da', 8),
-            'trang_diem' => $this->productModel->getProductsByCategoryName('Trang điểm', 8),
-            'mat_na'     => $this->productModel->getProductsByCategoryName('Mặt nạ', 8),
-            'lam_sach'   => $this->productModel->getProductsByCategoryName('Làm sạch', 8),
+            'cham_soc_da' => $this->productModel->getProductsByCategoryName('Chăm sóc da', 8),
+            'trang_diem'  => $this->productModel->getProductsByCategoryName('Trang điểm', 8),
+            'co_the'      => $this->productModel->getProductsByCategoryName('Cơ thể', 8),
+            'toc'         => $this->productModel->getProductsByCategoryName('Tóc', 8),
         ];
         // Fallback: nếu tab trống thì dùng sản phẩm chung
         $fallbackProducts = $this->productModel->getActiveProductsForHome(8);

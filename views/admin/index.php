@@ -146,6 +146,55 @@ include 'views/layout/header.php';
                 
             </div>
 
+            <!-- Cảnh báo Hết Hàng -->
+            <?php if (!empty($lowStockProducts)): ?>
+            <div class="row mb-5">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm rounded-4" style="border-left: 5px solid #dc3545 !important;">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="fw-bold m-0 text-danger"><i class="fas fa-exclamation-triangle me-2"></i> Cảnh báo: Sản phẩm sắp hết/hết hàng</h5>
+                                <a href="index.php?controller=admin&action=inventory" class="btn btn-sm btn-outline-danger rounded-pill px-3">Nhập kho ngay</a>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Sản phẩm</th>
+                                            <th>Số lượng tồn</th>
+                                            <th>Trạng thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($lowStockProducts as $p): ?>
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <img src="<?= htmlspecialchars($p['image'] ?? 'https://via.placeholder.com/40') ?>" alt="" style="width: 40px; height: 40px; object-fit: cover; border-radius: 8px; margin-right: 12px;">
+                                                    <span class="fw-bold text-dark"><?= htmlspecialchars($p['name']) ?></span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="fw-bold fs-5 <?= $p['stock'] <= 0 ? 'text-danger' : 'text-warning' ?>"><?= $p['stock'] ?></span>
+                                            </td>
+                                            <td>
+                                                <?php if ($p['stock'] <= 0): ?>
+                                                    <span class="badge bg-danger">Hết hàng</span>
+                                                <?php else: ?>
+                                                    <span class="badge bg-warning text-dark">Sắp hết</span>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <!-- Quick Actions / Hướng dẫn -->
             <div class="row">
                 <div class="col-12">

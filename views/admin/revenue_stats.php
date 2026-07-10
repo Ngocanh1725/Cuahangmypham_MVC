@@ -49,6 +49,21 @@ include 'views/layout/header.php';
                     </div>
                 </div>
             </div>
+
+            <!-- Biểu đồ doanh thu -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold mb-0">Biểu đồ doanh thu</h5>
+                        <select id="chartViewType" class="form-select form-select-sm w-auto shadow-sm border-0 bg-light fw-bold" onchange="updateChart(this.value)">
+                            <option value="day" selected>Theo ngày</option>
+                            <option value="month">Theo tháng</option>
+                            <option value="year">Theo năm</option>
+                        </select>
+                    </div>
+                    <canvas id="revenueChart" height="100"></canvas>
+                </div>
+            </div>
             
             <!-- Bảng dữ liệu -->
             <div class="card border-0 shadow-sm rounded-4 table-custom">
@@ -91,5 +106,103 @@ include 'views/layout/header.php';
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const rawData = <?php echo json_encode($revenues); ?>;
+    let revenueChartInstance = null;
+
+    function processData(type) {
+        const revenueGrouped = {};
+        
+        rawData.forEach(order => {
+            const dateObj = new Date(order.order_date);
+            let key = '';
+            
+            if (type === 'day') {
+                key = order.order_date.split(' ')[0]; // YYYY-MM-DD
+            } else if (type === 'month') {
+                const m = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+                const y = dateObj.getFullYear();
+                key = `${y}-${m}`; // YYYY-MM
+            } else if (type === 'year') {
+                key = dateObj.getFullYear().toString(); // YYYY
+            }
+
+            const amount = parseFloat(order.total_price);
+            if (!revenueGrouped[key]) {
+                revenueGrouped[key] = 0;
+            }
+            revenueGrouped[key] += amount;
+        });
+
+        const sortedKeys = Object.keys(revenueGrouped).sort();
+        
+        // Format labels
+        const formattedLabels = sortedKeys.map(k => {
+            if (type === 'day') return k.split('-').reverse().join('/');
+            if (type === 'month') return `Tháng ${k.split('-')[1]}/${k.split('-')[0]}`;
+            if (type === 'year') return `Năm ${k}`;
+            return k;
+        });
+
+        const chartData = sortedKeys.map(k => revenueGrouped[k]);
+        
+        return { labels: formattedLabels, data: chartData };
+    }
+
+    function updateChart(type) {
+        const processed = processData(type);
+        
+        if (revenueChartInstance) {
+            revenueChartInstance.destroy();
+        }
+
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        revenueChartInstance = new Chart(ctx, {
+            type: type === 'year' ? 'bar' : 'line',
+            data: {
+                labels: processed.labels,
+                datasets: [{
+                    label: 'Doanh thu (VNĐ)',
+                    data: processed.data,
+                    borderColor: '#be185d',
+                    backgroundColor: type === 'year' ? 'rgba(190, 24, 93, 0.6)' : 'rgba(190, 24, 93, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#be185d',
+                    pointRadius: 4,
+                    borderRadius: type === 'year' ? 4 : 0
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return new Intl.NumberFormat('vi-VN').format(value) + 'đ';
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return new Intl.NumberFormat('vi-VN').format(context.raw) + 'đ';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Initialize chart with 'day' view
+    updateChart('day');
+</script>
 
 <?php include 'views/layout/footer.php'; ?>

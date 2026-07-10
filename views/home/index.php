@@ -173,8 +173,9 @@ include 'views/layout/navbar.php';
     background: #1a1a1a; color: #fff;
     padding: 8px 20px; border-radius: 30px; font-size: .82rem; font-weight: 700;
     white-space: nowrap; transition: .2s;
+    position: relative; z-index: 10;
 }
-.flash-see-all:hover { background: #ff3b3b; }
+.flash-see-all:hover { background: #ff3b3b; color: #fff; }
 
 /* ---------- 4. EXCLUSIVE (Banner dọc) ---------- */
 .exclusive-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
@@ -376,6 +377,11 @@ include 'views/layout/navbar.php';
                             <?php if (!empty($p['discount_pct']) && $p['discount_pct'] > 0): ?>
                                 <span class="discount-badge">-<?= $p['discount_pct'] ?>%</span>
                             <?php endif; ?>
+                                                        <?php if(isset($p['stock']) && $p['stock'] <= 0): ?>
+                                <div style="position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.5); z-index: 10; display:flex; align-items:center; justify-content:center;">
+                                    <span style="background: #6c757d; color: #fff; padding: 6px 14px; font-weight: bold; border-radius: 20px; font-size: 0.8rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">HẾT HÀNG</span>
+                                </div>
+                            <?php endif; ?>
                             <button class="wishlist-btn" type="button"><i class="far fa-heart"></i></button>
                             <img src="<?= htmlspecialchars($p['image'] ?? 'https://via.placeholder.com/300x300?text=No+Image') ?>" alt="" class="prod-img">
                             <div class="prod-brand"><?= htmlspecialchars($p['brand_name'] ?? 'GLOW') ?></div>
@@ -466,18 +472,18 @@ document.addEventListener("DOMContentLoaded", function() {
     </div>
     <!-- Tabs -->
     <div class="tab-pills" id="trend-tabs">
-        <a class="tab-pill active" data-target="tab-duong_da" href="#">Dưỡng da</a>
+        <a class="tab-pill active" data-target="tab-cham_soc_da" href="#">Chăm sóc da</a>
         <a class="tab-pill" data-target="tab-trang_diem" href="#">Trang điểm</a>
-        <a class="tab-pill" data-target="tab-mat_na" href="#">Mặt nạ</a>
-        <a class="tab-pill" data-target="tab-lam_sach" href="#">Làm sạch</a>
+        <a class="tab-pill" data-target="tab-co_the" href="#">Cơ thể</a>
+        <a class="tab-pill" data-target="tab-toc" href="#">Tóc</a>
     </div>
     <!-- Tab Contents -->
     <?php
     $tabIds = [
-        'duong_da'   => 'Dưỡng da',
-        'trang_diem' => 'Trang điểm',
-        'mat_na'     => 'Mặt nạ',
-        'lam_sach'   => 'Làm sạch',
+        'cham_soc_da' => 'Chăm sóc da',
+        'trang_diem'  => 'Trang điểm',
+        'co_the'      => 'Cơ thể',
+        'toc'         => 'Tóc',
     ];
     $firstTab = true;
     foreach ($tabIds as $tabKey => $tabLabel):
@@ -491,6 +497,11 @@ document.addEventListener("DOMContentLoaded", function() {
                 <div class="swiper-slide">
                     <a href="index.php?controller=product&action=detail&id=<?= $p['id'] ?>" class="text-decoration-none">
                         <div class="prod-card">
+                                                        <?php if(isset($p['stock']) && $p['stock'] <= 0): ?>
+                                <div style="position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.5); z-index: 10; display:flex; align-items:center; justify-content:center;">
+                                    <span style="background: #6c757d; color: #fff; padding: 6px 14px; font-weight: bold; border-radius: 20px; font-size: 0.8rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">HẾT HÀNG</span>
+                                </div>
+                            <?php endif; ?>
                             <button class="wishlist-btn" type="button"><i class="far fa-heart"></i></button>
                             <img src="<?= htmlspecialchars($p['image'] ?? 'https://via.placeholder.com/300x300') ?>" alt="" class="prod-img">
                             <div class="prod-brand"><?= htmlspecialchars($p['brand_name'] ?? 'GLOW') ?></div>
@@ -533,6 +544,11 @@ document.addEventListener("DOMContentLoaded", function() {
                 <div class="swiper-slide">
                     <a href="index.php?controller=product&action=detail&id=<?= $p['id'] ?>" class="text-decoration-none">
                         <div class="prod-card">
+                                                        <?php if(isset($p['stock']) && $p['stock'] <= 0): ?>
+                                <div style="position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.5); z-index: 10; display:flex; align-items:center; justify-content:center;">
+                                    <span style="background: #6c757d; color: #fff; padding: 6px 14px; font-weight: bold; border-radius: 20px; font-size: 0.8rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">HẾT HÀNG</span>
+                                </div>
+                            <?php endif; ?>
                             <button class="wishlist-btn" type="button"><i class="far fa-heart"></i></button>
                             <img src="<?= htmlspecialchars($p['image'] ?? 'https://via.placeholder.com/300x300') ?>" alt="" class="prod-img">
                             <div class="prod-brand"><?= htmlspecialchars($p['brand_name'] ?? 'GLOW') ?></div>
@@ -584,7 +600,7 @@ document.addEventListener("DOMContentLoaded", function() {
     <?php else: ?>
     <!-- Fallback: hiển thị sản phẩm xu hướng dạng banner -->
     <div class="toptrend-grid">
-        <?php foreach (array_slice($trendingTabProducts['mat_na'] ?? [], 0, 4) as $p): ?>
+        <?php foreach (array_slice($trendingTabProducts['trang_diem'] ?? [], 0, 4) as $p): ?>
         <a href="index.php?controller=product&action=detail&id=<?= $p['id'] ?>" class="toptrend-card" style="background:#f5f5f5;border-radius:14px;">
             <img src="<?= htmlspecialchars($p['image'] ?? '') ?>" alt="" style="width:100%;aspect-ratio:3/4;object-fit:contain;padding:20px;">
             <span class="toptrend-see-btn">XEM NGAY</span>

@@ -61,7 +61,8 @@ include 'views/layout/header.php';
             
             <div class="card border-0 shadow-sm rounded-4 table-custom">
                 <div class="card-body p-0">
-                    <table class="table table-hover align-middle mb-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" style="min-width: 1000px;">
                         <thead>
                             <tr>
                                 <th class="ps-4 py-3">ID</th>
@@ -135,6 +136,7 @@ include 'views/layout/header.php';
                             <?php endif; ?>
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>

@@ -106,8 +106,47 @@ class ProductController {
         // Lấy sản phẩm liên quan
         $relatedProducts = $this->productModel->getRelatedProducts($product['category_id'], $id, 4);
         
+        // Lấy danh sách đánh giá
+        require_once 'models/ReviewModel.php';
+        $reviewModel = new ReviewModel($this->db);
+        $reviews = $reviewModel->getReviewsByProduct($id);
+        $reviewStats = $reviewModel->getAverageRating($id);
+        
         // Gọi View
         require_once 'views/products/detail.php';
+    }
+
+    // ---------------------------------------------------------
+    // 3. ACTION ADD_REVIEW: Xử lý gửi đánh giá
+    // ---------------------------------------------------------
+    public function addReview() {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        
+        if (!isset($_SESSION['user_id'])) {
+            header("Location: index.php?controller=user&action=login");
+            exit();
+        }
+        
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
+            $rating = isset($_POST['rating']) ? intval($_POST['rating']) : 5;
+            $comment = isset($_POST['comment']) ? trim($_POST['comment']) : '';
+            $user_id = $_SESSION['user_id'];
+            
+            if ($product_id > 0 && !empty($comment) && $rating >= 1 && $rating <= 5) {
+                require_once 'models/ReviewModel.php';
+                $reviewModel = new ReviewModel($this->db);
+                $reviewModel->addReview($product_id, $user_id, $rating, $comment);
+                
+                // Set flash message
+                $_SESSION['flash_message'] = "Cảm ơn bạn đã gửi đánh giá!";
+            }
+            
+            header("Location: index.php?controller=product&action=detail&id=" . $product_id . "#reviews");
+            exit();
+        }
     }
 }
 ?>

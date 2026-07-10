@@ -16,6 +16,22 @@ class AdminModel {
         return $result ? $result->fetch_assoc()['total'] : 0;
     }
 
+    public function getLowStockProducts($threshold = 10) {
+        $sql = "SELECT id, name, stock, image, category_id FROM products WHERE stock <= ? ORDER BY stock ASC";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("i", $threshold);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $data = [];
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $data[] = $row;
+            }
+        }
+        $stmt->close();
+        return $data;
+    }
+
     public function getNewOrdersCount() {
         $sql = "SELECT COUNT(*) as total FROM orders WHERE status = 'Chờ xử lý'";
         $result = $this->conn->query($sql);
@@ -103,7 +119,13 @@ class AdminModel {
         
         $stmt = $this->conn->prepare($sql);
         if (!empty($params)) {
-            $stmt->bind_param($types, ...$params);
+            $bindNames[] = $types;
+            for ($i = 0; $i < count($params); $i++) {
+                $bindName = 'bind' . $i;
+                $$bindName = $params[$i];
+                $bindNames[] = &$$bindName;
+            }
+            call_user_func_array([$stmt, 'bind_param'], $bindNames);
         }
         $stmt->execute();
         $result = $stmt->get_result();
